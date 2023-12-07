@@ -46,7 +46,8 @@ export class FederatedEntitiesController {
   @Patch(':id')
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateFederatedEntityDto: UpdateFederatedEntityDto,
+    @Body()
+    updateFederatedEntityDto: UpdateFederatedEntityDto,
   ) {
     return await this.federatedEntitiesService.update(
       id,
