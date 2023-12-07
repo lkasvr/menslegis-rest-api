@@ -39,7 +39,7 @@ export class FederatedEntitiesService {
 
     if (existsFederatedEntity)
       throw new BadRequestException(
-        `${political_power} on ${level} ${name} already exist`,
+        `${political_power} power on ${level} ${name} already exist`,
       );
 
     return this.federatedEntityRepository.save({
@@ -73,7 +73,7 @@ export class FederatedEntitiesService {
       );
     } catch (error) {
       if (error instanceof BadRequestException) return error.getResponse();
-      return error;
+      return new BadRequestException(error).getResponse();
     }
   }
 
@@ -130,7 +130,7 @@ export class FederatedEntitiesService {
         )
       )
         throw new BadRequestException(
-          `${political_power} cannot be a ${this.federatedEntity.level} power. This FederatedEntity belongs to a ${this.federatedEntity.level} level`,
+          `${political_power} power cannot belong to ${this.federatedEntity.name}. This is a ${this.federatedEntity.level} FederatedEntity`,
         );
     }
 
