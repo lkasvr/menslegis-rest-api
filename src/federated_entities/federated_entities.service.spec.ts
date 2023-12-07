@@ -165,28 +165,19 @@ describe('FederatedEntitiesService', () => {
     );
 
     const federatedEntity = new FederatedEntity();
-    let serviceMockForUpdateMethod = new FederatedEntitiesService({
-      findOne: jest.fn().mockImplementation(() => {
-        federatedEntity.level = FEDERATED_LEVEL.STATE;
-        return federatedEntity;
-      }),
-    } as any);
 
+    federatedEntity.level = FEDERATED_LEVEL.STATE;
+    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
     updateDtoMock.level = null;
-    await serviceMockForUpdateMethod.update('12345', updateDtoMock);
-    expect(serviceMockForUpdateMethod['federatedEntity']).toBeInstanceOf(
-      FederatedEntity,
-    );
-
-    expect(
-      await serviceMockForUpdateMethod.update('12345', updateDtoMock),
-    ).toStrictEqual(
+    await service.update('12345', updateDtoMock);
+    expect(service['federatedEntity']).toBeInstanceOf(FederatedEntity);
+    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
       new BadRequestException(
         `${updateDtoMock.name} cannot be a ${federatedEntity.level} member`,
       ).getResponse(),
     );
 
-    serviceMockForUpdateMethod = new FederatedEntitiesService({
+    service = new FederatedEntitiesService({
       findOne: jest.fn().mockImplementation(() => {
         federatedEntity.name = FEDERATIVE_UNIT.BLUMENAU;
         return federatedEntity;
@@ -195,14 +186,7 @@ describe('FederatedEntitiesService', () => {
 
     updateDtoMock.level = FEDERATED_LEVEL.FEDERAL;
     updateDtoMock.name = null;
-    await serviceMockForUpdateMethod.update('12345', updateDtoMock);
-    expect(serviceMockForUpdateMethod['federatedEntity']).toBeInstanceOf(
-      FederatedEntity,
-    );
-
-    expect(
-      await serviceMockForUpdateMethod.update('12345', updateDtoMock),
-    ).toStrictEqual(
+    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
       new BadRequestException(
         `${federatedEntity.name} cannot be a ${updateDtoMock.level} member`,
       ).getResponse(),
@@ -219,44 +203,20 @@ describe('FederatedEntitiesService', () => {
 
     const federatedEntity = new FederatedEntity();
 
-    let serviceMockForUpdateMethod = new FederatedEntitiesService({
-      findOne: jest.fn().mockImplementation(() => {
-        federatedEntity.level = FEDERATED_LEVEL.MUNICIPAL;
-        return federatedEntity;
-      }),
-    } as any);
-
+    federatedEntity.level = FEDERATED_LEVEL.MUNICIPAL;
+    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
     updateDtoMock.level = null;
-    await serviceMockForUpdateMethod.update('12345', updateDtoMock);
-    expect(serviceMockForUpdateMethod['federatedEntity']).toBeInstanceOf(
-      FederatedEntity,
-    );
-
-    expect(
-      await serviceMockForUpdateMethod.update('12345', updateDtoMock),
-    ).toStrictEqual(
+    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
       new BadRequestException(
         `${updateDtoMock.political_power} power cannot belong to ${federatedEntity.name}. This is a ${federatedEntity.level} FederatedEntity`,
       ).getResponse(),
     );
 
-    serviceMockForUpdateMethod = new FederatedEntitiesService({
-      findOne: jest.fn().mockImplementation(() => {
-        federatedEntity.political_power = POLITICAL_POWER.JUDICIARY;
-        return federatedEntity;
-      }),
-    } as any);
-
+    federatedEntity.political_power = POLITICAL_POWER.JUDICIARY;
+    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
     updateDtoMock.level = FEDERATED_LEVEL.MUNICIPAL;
     updateDtoMock.political_power = null;
-    await serviceMockForUpdateMethod.update('12345', updateDtoMock);
-    expect(serviceMockForUpdateMethod['federatedEntity']).toBeInstanceOf(
-      FederatedEntity,
-    );
-
-    expect(
-      await serviceMockForUpdateMethod.update('12345', updateDtoMock),
-    ).toStrictEqual(
+    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
       new BadRequestException(
         `${federatedEntity.political_power} cannot be a ${updateDtoMock.level} power. This FederatedEntity had a ${federatedEntity.political_power} power`,
       ).getResponse(),
