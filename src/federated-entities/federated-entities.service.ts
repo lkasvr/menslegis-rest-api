@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateFederatedEntityDto } from './dto/create-federated_entity.dto';
-import { UpdateFederatedEntityDto } from './dto/update-federated_entity.dto';
+import { CreateFederatedEntityDto } from './dto/create-federated-entity.dto';
+import { UpdateFederatedEntityDto } from './dto/update-federated-entity.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FederatedEntity } from './entities/federated_entity.entity';
+import { FederatedEntity } from './entities/federated-entities.entity';
 import { Repository } from 'typeorm';
 import { FEDERATIVE_UNIT } from './entities/enums/federative_unit.enum';
 import { FEDERATED_LEVEL } from './entities/enums/federated_level.enum';
@@ -33,13 +33,13 @@ export class FederatedEntitiesService {
     if (!this.isValidFederativeHierarchy(name, level))
       throw new BadRequestException(`${name} cannot be a ${level} member`);
 
-    const existsFederatedEntity = await this.federatedEntityRepository.findOne({
+    const federatedEntityExists = await this.federatedEntityRepository.findOne({
       where: { level, political_power, name },
     });
 
-    if (existsFederatedEntity)
+    if (federatedEntityExists)
       throw new BadRequestException(
-        `${political_power} power on ${level} ${name} already exist`,
+        `${political_power} power on ${name} ${level} already exist`,
       );
 
     return this.federatedEntityRepository.save({
@@ -54,10 +54,15 @@ export class FederatedEntitiesService {
   }
 
   async findOneById(id: string) {
-    return await this.federatedEntityRepository.findOne({
+    const federatedEntity = await this.federatedEntityRepository.findOne({
       where: { id },
       cache: 1000,
     });
+
+    if (!federatedEntity)
+      throw new BadRequestException('Federated Entity not found');
+
+    return federatedEntity;
   }
 
   async update(id: string, updateFederatedEntityDto: UpdateFederatedEntityDto) {
@@ -67,13 +72,12 @@ export class FederatedEntitiesService {
         id,
         ...updateFederatedEntityDto,
       });
-      return await this.federatedEntityRepository.update(
-        id,
-        updateFederatedEntityDto,
-      );
+      await this.federatedEntityRepository.update(id, updateFederatedEntityDto);
+
+      return this.findOneById(id);
     } catch (error) {
-      if (error instanceof BadRequestException) return error.getResponse();
-      return new BadRequestException(error).getResponse();
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException(error.detail);
     }
   }
 
@@ -89,7 +93,9 @@ export class FederatedEntitiesService {
     }
 
     if (!this.federatedEntity)
-      this.federatedEntity = await this.findOneById(id);
+      this.federatedEntity = await this.federatedEntityRepository.findOne({
+        where: { id },
+      });
 
     if (name && !level) {
       if (!this.isValidFederativeHierarchy(name, this.federatedEntity.level))
@@ -120,7 +126,9 @@ export class FederatedEntitiesService {
     }
 
     if (!this.federatedEntity)
-      this.federatedEntity = await this.findOneById(id);
+      this.federatedEntity = await this.federatedEntityRepository.findOne({
+        where: { id },
+      });
 
     if (political_power && !level) {
       if (

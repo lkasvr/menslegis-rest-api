@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { FederatedEntitiesService } from './federated_entities.service';
-import { FederatedEntitiesController } from './federated_entities.controller';
+import { FederatedEntitiesService } from './federated-entities.service';
+import { FederatedEntitiesController } from './federated-entities.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FederatedEntity } from './entities/federated_entity.entity';
+import { FederatedEntity } from './entities//federated-entities.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([FederatedEntity])],

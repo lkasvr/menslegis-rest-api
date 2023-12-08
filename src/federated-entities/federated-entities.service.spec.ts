@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FederatedEntitiesService } from './federated_entities.service';
+import { FederatedEntitiesService } from './federated-entities.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FederatedEntity } from './entities/federated_entity.entity';
-import { CreateFederatedEntityDto } from './dto/create-federated_entity.dto';
+import { FederatedEntity } from './entities/federated-entities.entity';
+import { CreateFederatedEntityDto } from './dto/create-federated-entity.dto';
 import { FEDERATED_LEVEL } from './entities/enums/federated_level.enum';
 import { FEDERATIVE_UNIT } from './entities/enums/federative_unit.enum';
 import { POLITICAL_POWER } from './entities/enums/political_power.enum';
 import { BadRequestException } from '@nestjs/common';
-import { UpdateFederatedEntityDto } from './dto/update-federated_entity.dto';
+import { UpdateFederatedEntityDto } from './dto/update-federated-entity.dto';
 
 const repositoryMock = {
   findOne: jest.fn().mockImplementation(() => new FederatedEntity()),

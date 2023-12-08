@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FederatedEntitiesController } from './federated_entities.controller';
-import { FederatedEntitiesService } from './federated_entities.service';
+import { FederatedEntitiesController } from './federated-entities.controller';
+import { FederatedEntitiesService } from './federated-entities.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FederatedEntity } from './entities/federated_entity.entity';
+import { FederatedEntity } from './entities/federated-entities.entity';
 
 describe('FederatedEntitiesController', () => {
   let controller: FederatedEntitiesController;

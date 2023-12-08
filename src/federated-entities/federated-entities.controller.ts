@@ -9,9 +9,9 @@ import {
   HttpCode,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { FederatedEntitiesService } from './federated_entities.service';
-import { CreateFederatedEntityDto } from './dto/create-federated_entity.dto';
-import { UpdateFederatedEntityDto } from './dto/update-federated_entity.dto';
+import { FederatedEntitiesService } from './federated-entities.service';
+import { CreateFederatedEntityDto } from './dto/create-federated-entity.dto';
+import { UpdateFederatedEntityDto } from './dto/update-federated-entity.dto';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Federated Entity')

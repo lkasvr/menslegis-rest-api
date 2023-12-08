@@ -2,7 +2,12 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FederatedEntitiesModule } from './federated_entities/federated_entities.module';
+import { FederatedEntitiesModule } from './federated-entities/federated-entities.module';
+import { PoliticalBodyModule } from './political-body/political-body.module';
+import { DeedModule } from './deed/deed.module';
+import { AuthorModule } from './author/author.module';
+import { DeedTypeModule } from './deed-type/deed-type.module';
+import { DeedSubtypeModule } from './deed-subtype/deed-subtype.module';
 
 @Module({
   imports: [
@@ -18,6 +23,11 @@ import { FederatedEntitiesModule } from './federated_entities/federated_entities
       autoLoadEntities: true,
     }),
     FederatedEntitiesModule,
+    PoliticalBodyModule,
+    DeedModule,
+    AuthorModule,
+    DeedTypeModule,
+    DeedSubtypeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
