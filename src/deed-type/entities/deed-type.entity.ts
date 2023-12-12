@@ -8,16 +8,19 @@ import {
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
+import { DEED_TYPE } from './enums/deed_type.enum';
 
+@Unique(['name'])
 @Entity()
 export class DeedType {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar', length: 55 })
-  name: string;
+  name: DEED_TYPE;
 
   @ManyToMany(
     () => PoliticalBody,

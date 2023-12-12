@@ -1,9 +1,17 @@
+import { IsUUID } from 'class-validator';
+
 export class CreateDeedDto {
-  politicalBodyId: string;
+  name: string;
 
-  deedTypeName?: string;
-  deedSubTypeName?: string;
-  typeSlug?: string;
+  @IsUUID()
+  politicalBodyId?: string;
 
-  deedName: string;
+  @IsUUID()
+  deedTypeId?: string;
+
+  @IsUUID()
+  deedSubtypeId?: string;
+
+  @IsUUID()
+  authorId?: string;
 }

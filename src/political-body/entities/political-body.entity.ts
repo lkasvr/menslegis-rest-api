@@ -16,6 +16,7 @@ import {
 } from 'typeorm';
 
 @Unique(['name'])
+@Unique(['name', 'federatedEntity'])
 @Entity()
 export class PoliticalBody {
   @PrimaryGeneratedColumn('uuid')
@@ -27,17 +28,27 @@ export class PoliticalBody {
   @ManyToOne(
     () => FederatedEntity,
     (federatedEntity) => federatedEntity.politicalBodies,
+    { nullable: false, onDelete: 'CASCADE' },
   )
   federatedEntity: FederatedEntity;
 
-  @ManyToMany(() => DeedType, (deedType) => deedType.politicalBodies)
-  @JoinTable()
+  @ManyToMany(() => DeedType, (deedType) => deedType.politicalBodies, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinTable({ name: 'political_body_deed_type' })
   deedTypes: DeedType[];
 
-  @OneToMany(() => Deed, (deed) => deed.politicalBody)
-  deed: Deed[];
+  @OneToMany(() => Deed, (deed) => deed.politicalBody, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  deeds: Deed[];
 
-  @OneToMany(() => Author, (author) => author.politicalBody)
+  @OneToMany(() => Author, (author) => author.politicalBody, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   authors: Author[];
 
   @CreateDateColumn({ type: 'timestamp with time zone' })

@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -30,6 +31,11 @@ export class FederatedEntity {
   @OneToMany(
     () => PoliticalBody,
     (politicalBody) => politicalBody.federatedEntity,
+    {
+      nullable: true,
+      cascade: ['insert', 'remove'],
+      onDelete: 'SET NULL',
+    },
   )
   politicalBodies: PoliticalBody[];
 
@@ -38,4 +44,7 @@ export class FederatedEntity {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: string;
+
+  @DeleteDateColumn({ type: 'time with time zone', nullable: true })
+  deletedAt?: Date;
 }

@@ -7,16 +7,20 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
+import { DEED_SUBTYPE } from './enums/deed_subtype.enum';
 
+@Unique(['name'])
+@Unique(['name', 'deedType'])
 @Entity()
 export class DeedSubtype {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar', length: 55 })
-  name: string;
+  name: DEED_SUBTYPE;
 
   @OneToMany(() => Deed, (deed) => deed.deedSubtype)
   deeds: Deed[];

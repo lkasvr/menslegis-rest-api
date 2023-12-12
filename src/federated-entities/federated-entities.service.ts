@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateFederatedEntityDto } from './dto/create-federated-entity.dto';
 import { UpdateFederatedEntityDto } from './dto/update-federated-entity.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,11 +41,12 @@ export class FederatedEntitiesService {
 
     const federatedEntityExists = await this.federatedEntityRepository.findOne({
       where: { level, political_power, name },
+      withDeleted: true,
     });
 
     if (federatedEntityExists)
       throw new BadRequestException(
-        `${political_power} power on ${name} ${level} already exist`,
+        `${political_power} power on ${name} ${level} already exist or there once was.`,
       );
 
     return this.federatedEntityRepository.save({
@@ -50,17 +57,43 @@ export class FederatedEntitiesService {
   }
 
   async findAll() {
-    return await this.federatedEntityRepository.find();
+    return await this.federatedEntityRepository.find({
+      relations: {
+        politicalBodies: true,
+      },
+      relationLoadStrategy: 'query',
+    });
   }
 
-  async findOneById(id: string) {
+  async findOne(id: string, withDeleted = false) {
     const federatedEntity = await this.federatedEntityRepository.findOne({
       where: { id },
       cache: 1000,
+      withDeleted,
     });
 
     if (!federatedEntity)
-      throw new BadRequestException('Federated Entity not found');
+      throw new NotFoundException('Federated Entity not found');
+
+    return federatedEntity;
+  }
+
+  async findOneById(id: string, withDeleted = false) {
+    const federatedEntity = await this.federatedEntityRepository.findOne({
+      where: { id },
+      withDeleted,
+      relations: {
+        politicalBodies: {
+          federatedEntity: false,
+          authors: false,
+          deedTypes: false,
+          deeds: false,
+        },
+      },
+    });
+
+    if (!federatedEntity)
+      throw new NotFoundException('Federated Entity not found');
 
     return federatedEntity;
   }
@@ -72,17 +105,28 @@ export class FederatedEntitiesService {
         id,
         ...updateFederatedEntityDto,
       });
+
       await this.federatedEntityRepository.update(id, updateFederatedEntityDto);
 
       return this.findOneById(id);
     } catch (error) {
-      if (error instanceof BadRequestException) throw error;
-      throw new BadRequestException(error.detail);
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(error.detail);
     }
   }
 
   async delete(id: string) {
+    return await this.federatedEntityRepository.softDelete(id);
+  }
+
+  async deletePermanently(id: string) {
+    await this.findOne(id, true);
     return await this.federatedEntityRepository.delete(id);
+  }
+
+  async restoreFederatedEntity(id: string) {
+    await this.findOne(id, true);
+    return await this.federatedEntityRepository.recover({ id });
   }
 
   async validateFederativeHierarchy({ id, name, level }: IFederatedEntity) {
@@ -92,10 +136,7 @@ export class FederatedEntitiesService {
       return;
     }
 
-    if (!this.federatedEntity)
-      this.federatedEntity = await this.federatedEntityRepository.findOne({
-        where: { id },
-      });
+    if (!this.federatedEntity) this.federatedEntity = await this.findOne(id);
 
     if (name && !level) {
       if (!this.isValidFederativeHierarchy(name, this.federatedEntity.level))
@@ -125,10 +166,7 @@ export class FederatedEntitiesService {
       return;
     }
 
-    if (!this.federatedEntity)
-      this.federatedEntity = await this.federatedEntityRepository.findOne({
-        where: { id },
-      });
+    if (!this.federatedEntity) this.federatedEntity = await this.findOne(id);
 
     if (political_power && !level) {
       if (
