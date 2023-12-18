@@ -67,7 +67,7 @@ export class PoliticalBodyService {
   }
 
   async findOneById(id: string) {
-    const politicalBodyx = await this.politicalBodyRepository
+    const politicalBody = await this.politicalBodyRepository
       .createQueryBuilder('politicalBody')
       .innerJoinAndSelect(
         'politicalBody.federatedEntity',
@@ -78,14 +78,9 @@ export class PoliticalBodyService {
       .cache(true)
       .getOne();
 
-    const politicalBody = await this.politicalBodyRepository.findOne({
-      where: { id },
-      cache: true,
-    });
-
     if (!politicalBody) throw new NotFoundException('Political Body not found');
 
-    return politicalBodyx;
+    return politicalBody;
   }
 
   async update(
