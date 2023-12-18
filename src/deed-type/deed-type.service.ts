@@ -51,8 +51,6 @@ export class DeedTypeService {
       if (error instanceof Error) throw new BadRequestException(error.message);
     }
 
-    console.log(politicalBodies);
-
     const deeType = await this.deedTypeRepository.save({
       name,
       politicalBodies,
@@ -62,23 +60,23 @@ export class DeedTypeService {
   }
 
   async findAll() {
-    return this.deedTypeRepository.find();
+    return await this.deedTypeRepository.find();
   }
 
   private async findOne(id: string, withDeleted = false) {
-    const federatedEntity = await this.deedTypeRepository.findOne({
+    const deedType = await this.deedTypeRepository.findOne({
       where: { id },
       cache: true,
       withDeleted,
     });
 
-    if (!federatedEntity) throw new NotFoundException('Type not found');
+    if (!deedType) throw new NotFoundException('Type not found');
 
-    return federatedEntity;
+    return deedType;
   }
 
   async findOneById(id: string) {
-    const politicalBody = await this.deedTypeRepository.findOne({
+    const deedType = await this.deedTypeRepository.findOne({
       where: { id },
       relations: {
         politicalBodies: {
@@ -88,9 +86,9 @@ export class DeedTypeService {
       cache: true,
     });
 
-    if (!politicalBody) throw new NotFoundException('Type not found');
+    if (!deedType) throw new NotFoundException('Type not found');
 
-    return politicalBody;
+    return deedType;
   }
 
   update(id: string, updateDeedTypeDto: UpdateDeedTypeDto) {
