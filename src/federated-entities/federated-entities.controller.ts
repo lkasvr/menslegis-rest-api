@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import { FederatedEntitiesService } from './federated-entities.service';
 import { CreateFederatedEntityDto } from './dto/create-federated-entity.dto';
@@ -53,6 +54,11 @@ export class FederatedEntitiesController {
       id,
       updateFederatedEntityDto,
     );
+  }
+
+  @Put(':id')
+  put(@Param('id') id: string) {
+    return this.federatedEntitiesService.restore(id);
   }
 
   @ApiResponse({

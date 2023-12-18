@@ -33,7 +33,6 @@ export class FederatedEntity {
     (politicalBody) => politicalBody.federatedEntity,
     {
       nullable: true,
-      cascade: ['insert', 'remove'],
       onDelete: 'SET NULL',
     },
   )
@@ -45,6 +44,10 @@ export class FederatedEntity {
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: string;
 
-  @DeleteDateColumn({ type: 'time with time zone', nullable: true })
+  @DeleteDateColumn({
+    type: 'time with time zone',
+    nullable: true,
+    select: false,
+  })
   deletedAt?: Date;
 }

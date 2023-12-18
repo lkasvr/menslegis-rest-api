@@ -6,10 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  ParseUUIDPipe,
+  HttpCode,
+  Put,
 } from '@nestjs/common';
 import { PoliticalBodyService } from './political-body.service';
 import { CreatePoliticalBodyDto } from './dto/create-political-body.dto';
 import { UpdatePoliticalBodyDto } from './dto/update-political-body.dto';
+import { ApiResponse } from '@nestjs/swagger';
 
 @Controller('political-body')
 export class PoliticalBodyController {
@@ -26,8 +30,8 @@ export class PoliticalBodyController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.politicalBodyService.findOne(+id);
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.politicalBodyService.findOneById(id);
   }
 
   @Patch(':id')
@@ -35,11 +39,20 @@ export class PoliticalBodyController {
     @Param('id') id: string,
     @Body() updatePoliticalBodyDto: UpdatePoliticalBodyDto,
   ) {
-    return this.politicalBodyService.update(+id, updatePoliticalBodyDto);
+    return this.politicalBodyService.update(id, updatePoliticalBodyDto);
   }
 
+  @Put(':id')
+  put(@Param('id') id: string) {
+    return this.politicalBodyService.restore(id);
+  }
+
+  @ApiResponse({
+    status: 204,
+  })
+  @HttpCode(204)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.politicalBodyService.remove(+id);
+  delete(@Param('id') id: string) {
+    return this.politicalBodyService.delete(id);
   }
 }

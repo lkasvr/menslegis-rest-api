@@ -6,7 +6,11 @@ import { CreateFederatedEntityDto } from './dto/create-federated-entity.dto';
 import { FEDERATED_LEVEL } from './entities/enums/federated_level.enum';
 import { FEDERATIVE_UNIT } from './entities/enums/federative_unit.enum';
 import { POLITICAL_POWER } from './entities/enums/political_power.enum';
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UpdateFederatedEntityDto } from './dto/update-federated-entity.dto';
 
 const repositoryMock = {
@@ -67,7 +71,7 @@ describe('FederatedEntitiesService', () => {
     repositoryMock.findOne.mockReturnValueOnce(new FederatedEntity());
 
     expect(service.create(createDtoMock)).rejects.toThrow(
-      `${createDtoMock.political_power} power on ${createDtoMock.level} ${createDtoMock.name} already exist`,
+      `${createDtoMock.political_power} power on ${createDtoMock.name} ${createDtoMock.level} already exist or there once was`,
     );
   });
 
@@ -139,12 +143,39 @@ describe('FederatedEntitiesService', () => {
     repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
 
     const result = await service.findOneById(id);
-
     expect(result).toEqual(federatedEntity);
+  });
+
+  it('should throw an exception when attempt to find a FederatedEntity by id', async () => {
+    repositoryMock.findOne.mockReturnValueOnce(null);
+
+    await expect(service.findOneById('12345')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  /* ____________________FIND_ONE METHOD____________________ */
+  it('should find one FederatedEntity', async () => {
+    const id = '12345';
+    const federatedEntity = new FederatedEntity();
+    federatedEntity.id = id;
+
+    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
+
+    const result = await service.findOne(id);
+    expect(result).toEqual(federatedEntity);
+
     expect(repositoryMock.findOne).toHaveBeenCalledWith({
       where: { id },
       cache: 1000,
+      withDeleted: false,
     });
+  });
+
+  it('should throw an exception when attempt to find a FederatedEntity', async () => {
+    repositoryMock.findOne.mockReturnValueOnce(null);
+
+    await expect(service.findOne('12345')).rejects.toThrow(NotFoundException);
   });
 
   /* ____________________UPDATE METHOD____________________ */
@@ -156,73 +187,6 @@ describe('FederatedEntitiesService', () => {
     );
   });
 
-  it('should return an error for invalid federative hierarchy', async () => {
-    updateDtoMock.level = FEDERATED_LEVEL.STATE;
-    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
-      new BadRequestException(
-        `${updateDtoMock.name} cannot be a ${updateDtoMock.level} member`,
-      ).getResponse(),
-    );
-
-    const federatedEntity = new FederatedEntity();
-
-    federatedEntity.level = FEDERATED_LEVEL.STATE;
-    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
-    updateDtoMock.level = null;
-    await service.update('12345', updateDtoMock);
-    expect(service['federatedEntity']).toBeInstanceOf(FederatedEntity);
-    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
-      new BadRequestException(
-        `${updateDtoMock.name} cannot be a ${federatedEntity.level} member`,
-      ).getResponse(),
-    );
-
-    service = new FederatedEntitiesService({
-      findOne: jest.fn().mockImplementation(() => {
-        federatedEntity.name = FEDERATIVE_UNIT.BLUMENAU;
-        return federatedEntity;
-      }),
-    } as any);
-
-    updateDtoMock.level = FEDERATED_LEVEL.FEDERAL;
-    updateDtoMock.name = null;
-    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
-      new BadRequestException(
-        `${federatedEntity.name} cannot be a ${updateDtoMock.level} member`,
-      ).getResponse(),
-    );
-  });
-
-  it('should return an error for invalid municipality power', async () => {
-    updateDtoMock.political_power = POLITICAL_POWER.JUDICIARY;
-    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
-      new BadRequestException(
-        `${updateDtoMock.political_power} cannot be a ${updateDtoMock.level} power`,
-      ).getResponse(),
-    );
-
-    const federatedEntity = new FederatedEntity();
-
-    federatedEntity.level = FEDERATED_LEVEL.MUNICIPAL;
-    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
-    updateDtoMock.level = null;
-    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
-      new BadRequestException(
-        `${updateDtoMock.political_power} power cannot belong to ${federatedEntity.name}. This is a ${federatedEntity.level} FederatedEntity`,
-      ).getResponse(),
-    );
-
-    federatedEntity.political_power = POLITICAL_POWER.JUDICIARY;
-    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
-    updateDtoMock.level = FEDERATED_LEVEL.MUNICIPAL;
-    updateDtoMock.political_power = null;
-    expect(await service.update('12345', updateDtoMock)).toStrictEqual(
-      new BadRequestException(
-        `${federatedEntity.political_power} cannot be a ${updateDtoMock.level} power. This FederatedEntity had a ${federatedEntity.political_power} power`,
-      ).getResponse(),
-    );
-  });
-
   it('should handle unknown exceptions thrown during update', async () => {
     jest
       .spyOn(service, 'validateMunicipalityPower')
@@ -230,18 +194,90 @@ describe('FederatedEntitiesService', () => {
         throw new Error('Unknown error');
       });
 
-    const result = await service.update('12345', updateDtoMock);
-    expect(result).toEqual(
-      new BadRequestException(new Error('Unknown error')).getResponse(),
+    await expect(service.update('12345', updateDtoMock)).rejects.toThrow(
+      HttpException,
     );
   });
 
-  /* ____________________DELETE METHOD____________________ */
+  /* ____________________DELETE PERMANENTLY METHOD____________________ */
   it('should delete a FederatedEntity by id', async () => {
     const deleteSpy = jest.spyOn(repositoryMock, 'delete');
 
-    await service.delete('12345');
+    await service.deletePermanently('12345');
 
     expect(deleteSpy).toHaveBeenCalledWith('12345');
+  });
+
+  /* ___VALIDATE MUNICIPALITY AND FEDERATIVE HIERARCHY___ */
+  it('should return an error for invalid municipality power', async () => {
+    updateDtoMock.political_power = POLITICAL_POWER.JUDICIARY;
+    await expect(
+      service.validateMunicipalityPower({ id: '12345', ...updateDtoMock }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        `${updateDtoMock.political_power} cannot be a ${updateDtoMock.level} power`,
+      ),
+    );
+
+    const federatedEntity = new FederatedEntity();
+    federatedEntity.level = FEDERATED_LEVEL.MUNICIPAL;
+
+    updateDtoMock.level = null;
+    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
+    await expect(
+      service.validateMunicipalityPower({ id: '12345', ...updateDtoMock }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        `${updateDtoMock.political_power} power cannot belong to ${federatedEntity.name}. This is a ${federatedEntity.level} FederatedEntity`,
+      ),
+    );
+
+    federatedEntity.political_power = POLITICAL_POWER.JUDICIARY;
+    updateDtoMock.level = FEDERATED_LEVEL.MUNICIPAL;
+    updateDtoMock.political_power = null;
+    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
+    await expect(
+      service.validateMunicipalityPower({ id: '12345', ...updateDtoMock }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        `${federatedEntity.political_power} cannot be a ${updateDtoMock.level} power. This FederatedEntity had a ${federatedEntity.political_power} power`,
+      ),
+    );
+  });
+
+  it('should return an error for invalid federative hierarchy', async () => {
+    updateDtoMock.level = FEDERATED_LEVEL.STATE;
+    await expect(
+      service.validateFederativeHierarchy({ id: '12345', ...updateDtoMock }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        `${updateDtoMock.name} cannot be a ${updateDtoMock.level} member`,
+      ),
+    );
+
+    const federatedEntity = new FederatedEntity();
+
+    federatedEntity.level = FEDERATED_LEVEL.FEDERAL;
+    repositoryMock.findOne.mockReturnValueOnce(federatedEntity);
+    updateDtoMock.level = null;
+    service.validateFederativeHierarchy({ id: '12345', ...updateDtoMock });
+    await expect(
+      service.validateFederativeHierarchy({ id: '12345', ...updateDtoMock }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        `${updateDtoMock.name} cannot be a ${federatedEntity.level} member`,
+      ),
+    );
+
+    federatedEntity.name = FEDERATIVE_UNIT.BLUMENAU;
+    updateDtoMock.level = FEDERATED_LEVEL.FEDERAL;
+    updateDtoMock.name = null;
+    await expect(
+      service.validateFederativeHierarchy({ id: '12345', ...updateDtoMock }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        `${federatedEntity.name} cannot be a ${updateDtoMock.level} member`,
+      ),
+    );
   });
 });

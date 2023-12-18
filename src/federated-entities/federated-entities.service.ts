@@ -46,7 +46,7 @@ export class FederatedEntitiesService {
 
     if (federatedEntityExists)
       throw new BadRequestException(
-        `${political_power} power on ${name} ${level} already exist or there once was.`,
+        `${political_power} power on ${name} ${level} already exist or there once was`,
       );
 
     return this.federatedEntityRepository.save({
@@ -78,10 +78,9 @@ export class FederatedEntitiesService {
     return federatedEntity;
   }
 
-  async findOneById(id: string, withDeleted = false) {
+  async findOneById(id: string) {
     const federatedEntity = await this.federatedEntityRepository.findOne({
       where: { id },
-      withDeleted,
       relations: {
         politicalBodies: {
           federatedEntity: false,
@@ -116,6 +115,7 @@ export class FederatedEntitiesService {
   }
 
   async delete(id: string) {
+    await this.findOne(id);
     return await this.federatedEntityRepository.softDelete(id);
   }
 
@@ -124,33 +124,34 @@ export class FederatedEntitiesService {
     return await this.federatedEntityRepository.delete(id);
   }
 
-  async restoreFederatedEntity(id: string) {
+  async restore(id: string) {
     await this.findOne(id, true);
     return await this.federatedEntityRepository.recover({ id });
   }
 
   async validateFederativeHierarchy({ id, name, level }: IFederatedEntity) {
-    if (name && level) {
-      if (!this.isValidFederativeHierarchy(name, level))
-        throw new BadRequestException(`${name} cannot be a ${level} member`);
-      return;
-    }
+    if (name && level && !this.isValidFederativeHierarchy(name, level))
+      throw new BadRequestException(`${name} cannot be a ${level} member`);
 
     if (!this.federatedEntity) this.federatedEntity = await this.findOne(id);
 
-    if (name && !level) {
-      if (!this.isValidFederativeHierarchy(name, this.federatedEntity.level))
-        throw new BadRequestException(
-          `${name} cannot be a ${this.federatedEntity.level} member`,
-        );
-    }
+    if (
+      name &&
+      !level &&
+      !this.isValidFederativeHierarchy(name, this.federatedEntity.level)
+    )
+      throw new BadRequestException(
+        `${name} cannot be a ${this.federatedEntity.level} member`,
+      );
 
-    if (!name && level) {
-      if (!this.isValidFederativeHierarchy(this.federatedEntity.name, level))
-        throw new BadRequestException(
-          `${this.federatedEntity.name} cannot be a ${level} member`,
-        );
-    }
+    if (
+      !name &&
+      level &&
+      !this.isValidFederativeHierarchy(this.federatedEntity.name, level)
+    )
+      throw new BadRequestException(
+        `${this.federatedEntity.name} cannot be a ${level} member`,
+      );
   }
 
   async validateMunicipalityPower({
@@ -158,42 +159,44 @@ export class FederatedEntitiesService {
     political_power,
     level,
   }: IFederatedEntity) {
-    if (political_power && level) {
-      if (!this.isValidMunicipalityPower(political_power, level))
-        throw new BadRequestException(
-          `${political_power} cannot be a ${level} power`,
-        );
-      return;
+    if (
+      political_power &&
+      level &&
+      !this.isValidMunicipalityPower(political_power, level)
+    ) {
+      throw new BadRequestException(
+        `${political_power} cannot be a ${level} power`,
+      );
     }
 
     if (!this.federatedEntity) this.federatedEntity = await this.findOne(id);
 
-    if (political_power && !level) {
-      if (
-        !this.isValidMunicipalityPower(
-          political_power,
-          this.federatedEntity.level,
-        )
+    if (
+      political_power &&
+      !level &&
+      !this.isValidMunicipalityPower(
+        political_power,
+        this.federatedEntity.level,
       )
-        throw new BadRequestException(
-          `${political_power} power cannot belong to ${this.federatedEntity.name}. This is a ${this.federatedEntity.level} FederatedEntity`,
-        );
-    }
+    )
+      throw new BadRequestException(
+        `${political_power} power cannot belong to ${this.federatedEntity.name}. This is a ${this.federatedEntity.level} FederatedEntity`,
+      );
 
-    if (!political_power && level) {
-      if (
-        !this.isValidMunicipalityPower(
-          this.federatedEntity.political_power,
-          level,
-        )
+    if (
+      !political_power &&
+      level &&
+      !this.isValidMunicipalityPower(
+        this.federatedEntity.political_power,
+        level,
       )
-        throw new BadRequestException(
-          `${this.federatedEntity.political_power} cannot be a ${level} power. This FederatedEntity had a ${this.federatedEntity.political_power} power`,
-        );
-    }
+    )
+      throw new BadRequestException(
+        `${this.federatedEntity.political_power} cannot be a ${level} power. This FederatedEntity had a ${this.federatedEntity.political_power} power`,
+      );
   }
 
-  isValidFederativeHierarchy(
+  public isValidFederativeHierarchy(
     federativeUnit: FEDERATIVE_UNIT,
     federatedLevel: FEDERATED_LEVEL,
   ) {
@@ -216,7 +219,7 @@ export class FederatedEntitiesService {
     return true;
   }
 
-  isValidMunicipalityPower(
+  public isValidMunicipalityPower(
     politicalPower: POLITICAL_POWER,
     federatedLevel: FEDERATED_LEVEL,
   ) {

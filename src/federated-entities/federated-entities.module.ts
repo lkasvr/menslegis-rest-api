@@ -8,5 +8,6 @@ import { FederatedEntity } from './entities//federated-entities.entity';
   imports: [TypeOrmModule.forFeature([FederatedEntity])],
   controllers: [FederatedEntitiesController],
   providers: [FederatedEntitiesService],
+  exports: [FederatedEntitiesService],
 })
 export class FederatedEntitiesModule {}

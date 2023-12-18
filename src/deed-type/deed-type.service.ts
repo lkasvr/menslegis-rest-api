@@ -13,7 +13,7 @@ export class DeedTypeService {
   ) {}
 
   async create(createDeedTypeDto: CreateDeedTypeDto) {
-    return await this.deedTypeRepository.save(createDeedTypeDto);
+    //return await this.deedTypeRepository.save(createDeedTypeDto);
   }
 
   findAll() {

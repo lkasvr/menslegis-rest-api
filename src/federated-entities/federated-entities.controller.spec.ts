@@ -27,4 +27,8 @@ describe('FederatedEntitiesController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  it('should create a federated entity', async () => {
+    //await expect(controller.create()).resolves.toBeInstanceOf();
+  });
 });

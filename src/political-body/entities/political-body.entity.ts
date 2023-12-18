@@ -5,6 +5,7 @@ import { FederatedEntity } from 'src/federated-entities/entities/federated-entit
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
@@ -41,7 +42,7 @@ export class PoliticalBody {
 
   @OneToMany(() => Deed, (deed) => deed.politicalBody, {
     nullable: true,
-    onDelete: 'CASCADE',
+    onDelete: 'SET NULL',
   })
   deeds: Deed[];
 
@@ -56,4 +57,11 @@ export class PoliticalBody {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: string;
+
+  @DeleteDateColumn({
+    type: 'time with time zone',
+    nullable: true,
+    select: false,
+  })
+  deletedAt: Date;
 }

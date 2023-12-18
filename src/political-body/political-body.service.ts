@@ -30,65 +30,75 @@ export class PoliticalBodyService {
       );
     }
 
-    const federatedEntity = await this.federatedEntityService.findOneById(
-      federatedEntityId,
-      false,
-    );
+    const federatedEntity =
+      await this.federatedEntityService.findOneById(federatedEntityId);
 
-    return this.politicalBodyRepository.save({ name, federatedEntity });
+    const result = await this.politicalBodyRepository.save({
+      name,
+      federatedEntity,
+    });
+    delete result.federatedEntity.politicalBodies;
+    return result;
   }
 
   async findAll() {
-    return await this.politicalBodyRepository.find({
-      relations: {
-        federatedEntity: {
-          politicalBodies: false,
-        },
-        deedTypes: {
-          politicalBodies: false,
-          deeds: false,
-          deedSubtypes: true,
-        },
-        deed: {
-          politicalBody: false,
-          author: true,
-          deedType: true,
-          deedSubtype: true,
-        },
-        authors: {
-          politicalBody: false,
-          deeds: false,
-        },
-      },
-      relationLoadStrategy: 'query',
-    });
+    return await this.politicalBodyRepository
+      .createQueryBuilder('politicalBody')
+      .innerJoinAndSelect(
+        'politicalBody.federatedEntity',
+        'federatedEntity',
+        'federatedEntity.deletedAt IS NULL',
+      )
+      .cache(true)
+      .getMany();
   }
 
-  async findOneById(id: string, withDeleted?: boolean) {
+  private async findOne(id: string, withDeleted = false) {
+    const federatedEntity = await this.politicalBodyRepository.findOne({
+      where: { id },
+      cache: true,
+      withDeleted,
+    });
+
+    if (!federatedEntity)
+      throw new NotFoundException('Political Body not found');
+
+    return federatedEntity;
+  }
+
+  async findOneById(id: string) {
+    const politicalBodyx = await this.politicalBodyRepository
+      .createQueryBuilder('politicalBody')
+      .innerJoinAndSelect(
+        'politicalBody.federatedEntity',
+        'federatedEntity',
+        'federatedEntity.deletedAt IS NULL',
+      )
+      .where('politicalBody.id = :id', { id })
+      .cache(true)
+      .getOne();
+
     const politicalBody = await this.politicalBodyRepository.findOne({
       where: { id },
-      cache: 1000,
-      withDeleted,
+      cache: true,
     });
 
     if (!politicalBody) throw new NotFoundException('Political Body not found');
 
-    return politicalBody;
+    return politicalBodyx;
   }
 
   async update(
     id: string,
     { name, federatedEntityId }: UpdatePoliticalBodyDto,
   ) {
-    const politicalBody = await this.findOneById(id, false);
+    const politicalBody = await this.findOneById(id);
 
     politicalBody.name = name;
 
     if (federatedEntityId) {
-      const federatedEntity = await this.federatedEntityService.findOneById(
-        federatedEntityId,
-        false,
-      );
+      const federatedEntity =
+        await this.federatedEntityService.findOneById(federatedEntityId);
 
       politicalBody.federatedEntity = federatedEntity;
     }
@@ -96,7 +106,17 @@ export class PoliticalBodyService {
     return this.politicalBodyRepository.save(politicalBody);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} politicalBody`;
+  async delete(id: string) {
+    return await this.politicalBodyRepository.softDelete(id);
+  }
+
+  async deletePermanently(id: string) {
+    await this.findOne(id, true);
+    return await this.politicalBodyRepository.delete(id);
+  }
+
+  async restore(id: string) {
+    await this.findOne(id, true);
+    return await this.politicalBodyRepository.recover({ id });
   }
 }

@@ -19,7 +19,7 @@ export class Deed {
   @Column({ type: 'varchar', length: 105 })
   name: string;
 
-  @ManyToOne(() => PoliticalBody, (politicalBody) => politicalBody.deed)
+  @ManyToOne(() => PoliticalBody, (politicalBody) => politicalBody.deeds)
   politicalBody: PoliticalBody;
 
   @ManyToOne(() => DeedType, (deedType) => deedType.deeds)
