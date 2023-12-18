@@ -19,12 +19,12 @@ export class PoliticalBodyService {
   ) {}
 
   async create({ name, federatedEntityId }: CreatePoliticalBodyDto) {
-    const politicalBodyExists = await this.politicalBodyRepository.findOne({
-      where: { name },
-      withDeleted: true,
-    });
-
-    if (politicalBodyExists) {
+    if (
+      await this.politicalBodyRepository.exist({
+        where: { name },
+        withDeleted: true,
+      })
+    ) {
       throw new BadRequestException(
         `Political Body ${name} already exists or once existed.`,
       );
@@ -37,7 +37,7 @@ export class PoliticalBodyService {
       name,
       federatedEntity,
     });
-    delete result.federatedEntity.politicalBodies;
+    //delete result.federatedEntity.politicalBodies;
     return result;
   }
 
@@ -73,6 +73,11 @@ export class PoliticalBodyService {
         'politicalBody.federatedEntity',
         'federatedEntity',
         'federatedEntity.deletedAt IS NULL',
+      )
+      .leftJoinAndSelect(
+        'politicalBody.deedTypes',
+        'deedTypes',
+        'deedTypes.deletedAt IS NULL',
       )
       .where('politicalBody.id = :id', { id })
       .cache(true)

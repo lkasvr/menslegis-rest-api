@@ -6,10 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode,
+  Put,
 } from '@nestjs/common';
 import { DeedTypeService } from './deed-type.service';
 import { CreateDeedTypeDto } from './dto/create-deed-type.dto';
 import { UpdateDeedTypeDto } from './dto/update-deed-type.dto';
+import { ApiResponse } from '@nestjs/swagger';
 
 @Controller('deed-type')
 export class DeedTypeController {
@@ -27,7 +30,7 @@ export class DeedTypeController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.deedTypeService.findOne(+id);
+    return this.deedTypeService.findOneById(id);
   }
 
   @Patch(':id')
@@ -35,11 +38,20 @@ export class DeedTypeController {
     @Param('id') id: string,
     @Body() updateDeedTypeDto: UpdateDeedTypeDto,
   ) {
-    return this.deedTypeService.update(+id, updateDeedTypeDto);
+    return this.deedTypeService.update(id, updateDeedTypeDto);
   }
 
+  @Put(':id')
+  put(@Param('id') id: string) {
+    return this.deedTypeService.restore(id);
+  }
+
+  @ApiResponse({
+    status: 204,
+  })
+  @HttpCode(204)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.deedTypeService.remove(+id);
+  delete(@Param('id') id: string) {
+    return this.deedTypeService.delete(id);
   }
 }

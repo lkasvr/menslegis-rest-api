@@ -35,7 +35,7 @@ export class PoliticalBody {
 
   @ManyToMany(() => DeedType, (deedType) => deedType.politicalBodies, {
     nullable: true,
-    onDelete: 'SET NULL',
+    onDelete: 'CASCADE',
   })
   @JoinTable({ name: 'political_body_deed_type' })
   deedTypes: DeedType[];

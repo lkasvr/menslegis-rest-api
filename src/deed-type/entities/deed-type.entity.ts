@@ -4,6 +4,7 @@ import { PoliticalBody } from 'src/political-body/entities/political-body.entity
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   ManyToMany,
   OneToMany,
@@ -25,6 +26,7 @@ export class DeedType {
   @ManyToMany(
     () => PoliticalBody,
     (politicalBodies) => politicalBodies.deedTypes,
+    { onDelete: 'CASCADE' },
   )
   politicalBodies: PoliticalBody[];
 
@@ -39,4 +41,11 @@ export class DeedType {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updated_at: string;
+
+  @DeleteDateColumn({
+    type: 'time with time zone',
+    nullable: true,
+    select: false,
+  })
+  deletedAt: Date;
 }

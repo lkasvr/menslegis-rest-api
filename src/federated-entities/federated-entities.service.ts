@@ -39,12 +39,12 @@ export class FederatedEntitiesService {
     if (!this.isValidFederativeHierarchy(name, level))
       throw new BadRequestException(`${name} cannot be a ${level} member`);
 
-    const federatedEntityExists = await this.federatedEntityRepository.findOne({
-      where: { level, political_power, name },
-      withDeleted: true,
-    });
-
-    if (federatedEntityExists)
+    if (
+      await this.federatedEntityRepository.exist({
+        where: { level, political_power, name },
+        withDeleted: true,
+      })
+    )
       throw new BadRequestException(
         `${political_power} power on ${name} ${level} already exist or there once was`,
       );
