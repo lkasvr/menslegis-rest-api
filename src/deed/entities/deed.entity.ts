@@ -6,11 +6,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 
+@Unique(['name'])
 @Entity()
 export class Deed {
   @PrimaryGeneratedColumn('uuid')
@@ -18,6 +22,18 @@ export class Deed {
 
   @Column({ type: 'varchar', length: 105 })
   name: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  ementa: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  status: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  docLink: string;
+
+  @Column({ type: 'date', nullable: true })
+  docDate: string;
 
   @ManyToOne(() => PoliticalBody, (politicalBody) => politicalBody.deeds)
   politicalBody: PoliticalBody;
@@ -28,8 +44,9 @@ export class Deed {
   @ManyToOne(() => DeedSubtype, (deedSubtype) => deedSubtype.deeds)
   deedSubtype: DeedSubtype;
 
-  @ManyToOne(() => Author, (author) => author.deeds)
-  author: Author;
+  @ManyToMany(() => Author, (authors) => authors.deeds, { onDelete: 'CASCADE' })
+  @JoinTable({ name: 'author_deed' })
+  authors: Author[];
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at: string;

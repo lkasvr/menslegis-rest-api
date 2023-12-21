@@ -4,12 +4,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 
+@Unique(['name'])
+@Unique(['name', 'politicalBody'])
 @Entity()
 export class Author {
   @PrimaryGeneratedColumn('uuid')
@@ -18,10 +21,17 @@ export class Author {
   @Column({ type: 'varchar', length: 55 })
   name: string;
 
-  @ManyToOne(() => PoliticalBody, (politicalBody) => politicalBody.authors)
+  @ManyToOne(() => PoliticalBody, (politicalBody) => politicalBody.authors, {
+    nullable: true,
+    onDelete: 'SET NULL',
+    onUpdate: 'SET NULL',
+  })
   politicalBody: PoliticalBody;
 
-  @OneToMany(() => Deed, (deed) => deed.author)
+  @ManyToMany(() => Deed, (deeds) => deeds.authors, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   deeds: Deed[];
 
   @CreateDateColumn({ type: 'timestamp with time zone' })

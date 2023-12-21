@@ -26,7 +26,7 @@ export class PoliticalBodyService {
       })
     ) {
       throw new BadRequestException(
-        `Political Body ${name} already exists or once existed.`,
+        `${name} Political Body already exists or once existed.`,
       );
     }
 
@@ -67,23 +67,22 @@ export class PoliticalBodyService {
   }
 
   async findOneById(id: string) {
-    const politicalBody = await this.politicalBodyRepository
-      .createQueryBuilder('politicalBody')
-      .innerJoinAndSelect(
-        'politicalBody.federatedEntity',
-        'federatedEntity',
-        'federatedEntity.deletedAt IS NULL',
-      )
-      .leftJoinAndSelect(
-        'politicalBody.deedTypes',
-        'deedTypes',
-        'deedTypes.deletedAt IS NULL',
-      )
-      .where('politicalBody.id = :id', { id })
-      .cache(true)
-      .getOne();
+    const politicalBody = await this.politicalBodyRepository.findOne({
+      where: {
+        id,
+      },
+      relations: {
+        federatedEntity: true,
+        authors: true,
+        deeds: true,
+        deedTypes: true,
+        deedSubtypes: true,
+      },
+      cache: true,
+    });
 
-    if (!politicalBody) throw new NotFoundException('Political Body not found');
+    if (!politicalBody.federatedEntity || !politicalBody.deedTypes)
+      throw new NotFoundException('Political Body not found');
 
     return politicalBody;
   }

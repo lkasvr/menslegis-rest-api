@@ -14,26 +14,26 @@ import { DeedTypeService } from 'src/deed-type/deed-type.service';
 export class DeedSubtypeService {
   constructor(
     @InjectRepository(DeedSubtype)
-    private readonly deedSubTypeRepository: Repository<DeedSubtype>,
+    private readonly deedSubtypeRepository: Repository<DeedSubtype>,
     private readonly politicalBodyService: PoliticalBodyService,
     private readonly deedTypeService: DeedTypeService,
   ) {}
 
   async create({ name, deedTypeId, politicalBodyId }: CreateDeedSubtypeDto) {
     if (
-      await this.deedSubTypeRepository.exist({
+      await this.deedSubtypeRepository.exist({
         where: { name },
         cache: true,
       })
     )
-      throw new BadRequestException(`Subtype ${name} already exists`);
+      throw new BadRequestException(`${name} Subtype already exists`);
 
     const politicalBody =
       await this.politicalBodyService.findOne(politicalBodyId);
 
     const deedType = await this.deedTypeService.findOne(deedTypeId);
 
-    return await this.deedSubTypeRepository.save({
+    return await this.deedSubtypeRepository.save({
       name,
       politicalBody,
       deedType,
@@ -41,35 +41,49 @@ export class DeedSubtypeService {
   }
 
   async findAll() {
-    return await this.deedSubTypeRepository.find();
+    return await this.deedSubtypeRepository
+      .createQueryBuilder('deedSubtype')
+      .innerJoinAndSelect(
+        'deedSubtype.politicalBody',
+        'politicalBody',
+        'politicalBody.deletedAt IS NULL',
+      )
+      .innerJoinAndSelect(
+        'deedSubtype.deedType',
+        'deedType',
+        'deedType.deletedAt IS NULL',
+      )
+      .cache(true)
+      .getMany();
   }
 
   async findOneById(id: string) {
-    const deedSubtype = await this.deedSubTypeRepository.findOne({
+    const deedSubtype = await this.deedSubtypeRepository.findOne({
       where: { id },
       relations: {
-        deedType: true,
         politicalBody: {
           federatedEntity: true,
         },
+        deedType: true,
       },
       cache: true,
     });
 
-    if (!deedSubtype) throw new NotFoundException('Subtype not found');
+    if (!deedSubtype.politicalBody || !deedSubtype.deedType)
+      throw new NotFoundException('Subtype not found');
 
     return deedSubtype;
   }
 
   async remove(id: string) {
     if (
-      !(await this.deedSubTypeRepository.exist({
+      !(await this.deedSubtypeRepository.exist({
         where: { id },
         cache: true,
       }))
     )
       throw new NotFoundException('Subtype not found');
 
-    return await this.deedSubTypeRepository.delete(id);
+    return await this.deedSubtypeRepository.delete(id);
   }
 }

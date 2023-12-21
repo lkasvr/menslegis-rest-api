@@ -26,7 +26,7 @@ export class DeedTypeService {
       })
     ) {
       throw new BadRequestException(
-        `Type ${name} already exists or once existed.`,
+        `${name} Type already exists or once existed.`,
       );
     }
 

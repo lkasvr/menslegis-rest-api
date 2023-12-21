@@ -22,7 +22,7 @@ import { DeedSubtypeModule } from './deed-subtype/deed-subtype.module';
       logging: true,
       autoLoadEntities: true,
       cache: {
-        duration: 5000,
+        duration: 0, //5000,
       },
     }),
     FederatedEntitiesModule,
