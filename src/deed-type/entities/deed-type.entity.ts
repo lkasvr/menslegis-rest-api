@@ -30,10 +30,16 @@ export class DeedType {
   )
   politicalBodies: PoliticalBody[];
 
-  @OneToMany(() => Deed, (deed) => deed.deedType)
+  @OneToMany(() => Deed, (deed) => deed.deedType, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   deeds: Deed[];
 
-  @OneToMany(() => DeedSubtype, (deedSubtype) => deedSubtype.deedType)
+  @OneToMany(() => DeedSubtype, (deedSubtype) => deedSubtype.deedType, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   deedSubtypes: DeedSubtype[];
 
   @CreateDateColumn({ type: 'timestamp with time zone' })

@@ -9,5 +9,6 @@ import { PoliticalBodyModule } from 'src/political-body/political-body.module';
   imports: [TypeOrmModule.forFeature([DeedType]), PoliticalBodyModule],
   controllers: [DeedTypeController],
   providers: [DeedTypeService],
+  exports: [DeedTypeService],
 })
 export class DeedTypeModule {}

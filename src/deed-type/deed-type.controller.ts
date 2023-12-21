@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   HttpCode,
@@ -11,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { DeedTypeService } from './deed-type.service';
 import { CreateDeedTypeDto } from './dto/create-deed-type.dto';
-import { UpdateDeedTypeDto } from './dto/update-deed-type.dto';
 import { ApiResponse } from '@nestjs/swagger';
 
 @Controller('deed-type')
@@ -19,31 +17,27 @@ export class DeedTypeController {
   constructor(private readonly deedTypeService: DeedTypeService) {}
 
   @Post()
-  create(@Body() createDeedTypeDto: CreateDeedTypeDto) {
-    return this.deedTypeService.create(createDeedTypeDto);
+  async create(@Body() createDeedTypeDto: CreateDeedTypeDto) {
+    return await this.deedTypeService.create(createDeedTypeDto);
   }
 
+  @ApiResponse({
+    status: 200,
+    isArray: true,
+  })
   @Get()
-  findAll() {
-    return this.deedTypeService.findAll();
+  async findAll() {
+    return await this.deedTypeService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.deedTypeService.findOneById(id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateDeedTypeDto: UpdateDeedTypeDto,
-  ) {
-    return this.deedTypeService.update(id, updateDeedTypeDto);
+  async findOne(@Param('id') id: string) {
+    return await this.deedTypeService.findOneById(id);
   }
 
   @Put(':id')
-  put(@Param('id') id: string) {
-    return this.deedTypeService.restore(id);
+  async put(@Param('id') id: string) {
+    return await this.deedTypeService.restore(id);
   }
 
   @ApiResponse({
@@ -51,7 +45,7 @@ export class DeedTypeController {
   })
   @HttpCode(204)
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.deedTypeService.delete(id);
+  async delete(@Param('id') id: string) {
+    await this.deedTypeService.delete(id);
   }
 }

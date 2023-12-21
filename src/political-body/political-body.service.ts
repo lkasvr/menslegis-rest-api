@@ -53,7 +53,7 @@ export class PoliticalBodyService {
       .getMany();
   }
 
-  private async findOne(id: string, withDeleted = false) {
+  async findOne(id: string, withDeleted = false) {
     const federatedEntity = await this.politicalBodyRepository.findOne({
       where: { id },
       cache: true,

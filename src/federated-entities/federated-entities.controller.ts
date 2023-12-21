@@ -57,8 +57,8 @@ export class FederatedEntitiesController {
   }
 
   @Put(':id')
-  put(@Param('id') id: string) {
-    return this.federatedEntitiesService.restore(id);
+  async put(@Param('id') id: string) {
+    return await this.federatedEntitiesService.restore(id);
   }
 
   @ApiResponse({

@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  HttpCode,
+} from '@nestjs/common';
 import { DeedSubtypeService } from './deed-subtype.service';
 import { CreateDeedSubtypeDto } from './dto/create-deed-subtype.dto';
-import { UpdateDeedSubtypeDto } from './dto/update-deed-subtype.dto';
+import { ApiResponse } from '@nestjs/swagger';
 
 @Controller('deed-subtype')
 export class DeedSubtypeController {
@@ -19,16 +27,15 @@ export class DeedSubtypeController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.deedSubtypeService.findOne(+id);
+    return this.deedSubtypeService.findOneById(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDeedSubtypeDto: UpdateDeedSubtypeDto) {
-    return this.deedSubtypeService.update(+id, updateDeedSubtypeDto);
-  }
-
+  @ApiResponse({
+    status: 204,
+  })
+  @HttpCode(204)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.deedSubtypeService.remove(+id);
+  async remove(@Param('id') id: string) {
+    await this.deedSubtypeService.remove(id);
   }
 }

@@ -1,4 +1,5 @@
 import { Author } from 'src/author/entities/author.entity';
+import { DeedSubtype } from 'src/deed-subtype/entities/deed-subtype.entity';
 import { DeedType } from 'src/deed-type/entities/deed-type.entity';
 import { Deed } from 'src/deed/entities/deed.entity';
 import { FederatedEntity } from 'src/federated-entities/entities/federated-entities.entity';
@@ -39,6 +40,12 @@ export class PoliticalBody {
   })
   @JoinTable({ name: 'political_body_deed_type' })
   deedTypes: DeedType[];
+
+  @OneToMany(() => DeedSubtype, (deedSubtype) => deedSubtype.politicalBody, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  deedSubtypes: DeedSubtype[];
 
   @OneToMany(() => Deed, (deed) => deed.politicalBody, {
     nullable: true,

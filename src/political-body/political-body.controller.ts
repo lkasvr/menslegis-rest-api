@@ -20,31 +20,31 @@ export class PoliticalBodyController {
   constructor(private readonly politicalBodyService: PoliticalBodyService) {}
 
   @Post()
-  create(@Body() createPoliticalBodyDto: CreatePoliticalBodyDto) {
-    return this.politicalBodyService.create(createPoliticalBodyDto);
+  async create(@Body() createPoliticalBodyDto: CreatePoliticalBodyDto) {
+    return await this.politicalBodyService.create(createPoliticalBodyDto);
   }
 
   @Get()
-  findAll() {
-    return this.politicalBodyService.findAll();
+  async findAll() {
+    return await this.politicalBodyService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.politicalBodyService.findOneById(id);
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return await this.politicalBodyService.findOneById(id);
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updatePoliticalBodyDto: UpdatePoliticalBodyDto,
   ) {
-    return this.politicalBodyService.update(id, updatePoliticalBodyDto);
+    return await this.politicalBodyService.update(id, updatePoliticalBodyDto);
   }
 
   @Put(':id')
-  put(@Param('id') id: string) {
-    return this.politicalBodyService.restore(id);
+  async put(@Param('id') id: string) {
+    return await this.politicalBodyService.restore(id);
   }
 
   @ApiResponse({
@@ -52,7 +52,7 @@ export class PoliticalBodyController {
   })
   @HttpCode(204)
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.politicalBodyService.delete(id);
+  async delete(@Param('id') id: string) {
+    await this.politicalBodyService.delete(id);
   }
 }

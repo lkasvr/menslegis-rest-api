@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDeedTypeDto } from './dto/create-deed-type.dto';
-import { UpdateDeedTypeDto } from './dto/update-deed-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DeedType } from './entities/deed-type.entity';
@@ -63,7 +62,7 @@ export class DeedTypeService {
     return await this.deedTypeRepository.find();
   }
 
-  private async findOne(id: string, withDeleted = false) {
+  async findOne(id: string, withDeleted = false) {
     const deedType = await this.deedTypeRepository.findOne({
       where: { id },
       cache: true,
@@ -89,10 +88,6 @@ export class DeedTypeService {
     if (!deedType) throw new NotFoundException('Type not found');
 
     return deedType;
-  }
-
-  update(id: string, updateDeedTypeDto: UpdateDeedTypeDto) {
-    return `This action updates a #${id}, ${updateDeedTypeDto.name} deedType`;
   }
 
   async delete(id: string) {

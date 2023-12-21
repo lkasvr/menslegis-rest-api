@@ -1,1 +1,4 @@
-export enum DEED_SUBTYPE {}
+export enum DEED_SUBTYPE {
+  INDICATION = 'INDICACAO',
+  MOTION = 'MOCAO',
+}

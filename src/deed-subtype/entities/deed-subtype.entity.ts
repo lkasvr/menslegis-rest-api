@@ -1,5 +1,6 @@
 import { DeedType } from 'src/deed-type/entities/deed-type.entity';
 import { Deed } from 'src/deed/entities/deed.entity';
+import { PoliticalBody } from 'src/political-body/entities/political-body.entity';
 import {
   Column,
   CreateDateColumn,
@@ -10,7 +11,6 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
-import { DEED_SUBTYPE } from './enums/deed_subtype.enum';
 
 @Unique(['name'])
 @Unique(['name', 'deedType'])
@@ -20,13 +20,29 @@ export class DeedSubtype {
   id: string;
 
   @Column({ type: 'varchar', length: 55 })
-  name: DEED_SUBTYPE;
+  name: string;
 
-  @OneToMany(() => Deed, (deed) => deed.deedSubtype)
+  @OneToMany(() => Deed, (deed) => deed.deedSubtype, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   deeds: Deed[];
 
-  @ManyToOne(() => DeedType, (deedType) => deedType.deedSubtypes)
+  @ManyToOne(() => DeedType, (deedType) => deedType.deedSubtypes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   deedType: DeedType;
+
+  @ManyToOne(
+    () => PoliticalBody,
+    (politicalBody) => politicalBody.deedSubtypes,
+    {
+      nullable: true,
+      onDelete: 'SET NULL',
+    },
+  )
+  politicalBody: PoliticalBody;
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at: string;
