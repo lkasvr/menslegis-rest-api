@@ -35,7 +35,7 @@ export class DeedSubtypeController {
   })
   @HttpCode(204)
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    await this.deedSubtypeService.remove(id);
+  async delete(@Param('id') id: string) {
+    await this.deedSubtypeService.delete(id);
   }
 }

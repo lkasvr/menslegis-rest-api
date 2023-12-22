@@ -4,14 +4,14 @@ export class CreateDeedDto {
   name: string;
 
   @IsUUID()
-  politicalBodyId?: string;
+  politicalBodyId: string;
+
+  @IsUUID('all', { each: true })
+  authorsIds: string[];
 
   @IsUUID()
-  deedTypeId?: string;
+  deedTypeId: string;
 
   @IsUUID()
-  deedSubtypeId?: string;
-
-  @IsUUID()
-  authorId?: string;
+  deedSubtypeId: string;
 }

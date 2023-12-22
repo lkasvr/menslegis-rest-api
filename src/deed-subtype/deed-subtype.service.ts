@@ -57,6 +57,18 @@ export class DeedSubtypeService {
       .getMany();
   }
 
+  async findOne(id: string, withDeleted = false) {
+    const deedSubtype = await this.deedSubtypeRepository.findOne({
+      where: { id },
+      cache: true,
+      withDeleted,
+    });
+
+    if (!deedSubtype) throw new NotFoundException('Subtype not found');
+
+    return deedSubtype;
+  }
+
   async findOneById(id: string) {
     const deedSubtype = await this.deedSubtypeRepository.findOne({
       where: { id },
@@ -75,7 +87,7 @@ export class DeedSubtypeService {
     return deedSubtype;
   }
 
-  async remove(id: string) {
+  async delete(id: string) {
     if (
       !(await this.deedSubtypeRepository.exist({
         where: { id },

@@ -9,5 +9,6 @@ import { PoliticalBodyModule } from 'src/political-body/political-body.module';
   imports: [TypeOrmModule.forFeature([Author]), PoliticalBodyModule],
   controllers: [AuthorController],
   providers: [AuthorService],
+  exports: [AuthorService],
 })
 export class AuthorModule {}

@@ -66,6 +66,18 @@ export class AuthorService {
     return author;
   }
 
+  async findOne(id: string, withDeleted = false) {
+    const author = await this.authorRepository.findOne({
+      where: { id },
+      cache: true,
+      withDeleted,
+    });
+
+    if (!author) throw new NotFoundException('Author not found');
+
+    return author;
+  }
+
   async update(id: string, { name, politicalBodyId }: UpdateAuthorDto) {
     const politicalBody =
       await this.politicalBodyService.findOne(politicalBodyId);

@@ -14,5 +14,6 @@ import { DeedTypeModule } from 'src/deed-type/deed-type.module';
   ],
   controllers: [DeedSubtypeController],
   providers: [DeedSubtypeService],
+  exports: [DeedSubtypeService],
 })
 export class DeedSubtypeModule {}

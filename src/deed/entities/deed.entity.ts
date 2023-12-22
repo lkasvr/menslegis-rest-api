@@ -15,6 +15,7 @@ import {
 } from 'typeorm';
 
 @Unique(['name'])
+@Unique(['name', 'deedType', 'deedSubtype'])
 @Entity()
 export class Deed {
   @PrimaryGeneratedColumn('uuid')
@@ -24,7 +25,7 @@ export class Deed {
   name: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  ementa: string;
+  description: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   status: string;

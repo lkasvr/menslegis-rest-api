@@ -19,6 +19,11 @@ export class DeedTypeService {
   ) {}
 
   async create({ name, politicalBodiesId }: CreateDeedTypeDto) {
+    if (politicalBodiesId.length > 3)
+      throw new BadRequestException(
+        'Max ratio in a create operation exceeded. Only three associations per creation are allowed',
+      );
+
     if (
       await this.deedTypeRepository.exist({
         where: { name },
@@ -29,11 +34,6 @@ export class DeedTypeService {
         `${name} Type already exists or once existed.`,
       );
     }
-
-    if (politicalBodiesId.length > 3)
-      throw new BadRequestException(
-        'Max ratio in a create operation exceeded. Only three associations per creation are allowed',
-      );
 
     const politicalBodiesPromises = politicalBodiesId.map((politicalBodyId) =>
       this.politicalBodyService.findOneById(politicalBodyId).catch(() => {
