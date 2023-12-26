@@ -34,7 +34,7 @@ export class Deed {
   docLink: string;
 
   @Column({ type: 'date', nullable: true })
-  docDate: string;
+  docDate: Date;
 
   @ManyToOne(() => PoliticalBody, (politicalBody) => politicalBody.deeds)
   politicalBody: PoliticalBody;
