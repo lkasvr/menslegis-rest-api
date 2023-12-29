@@ -9,8 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { QueryRunner, Repository } from 'typeorm';
 import { DeedType } from './entities/deed-type.entity';
 import { PoliticalBodyService } from 'src/political-body/political-body.service';
-import { PoliticalBody } from 'src/political-body/entities/political-body.entity';
 import { DEED_TYPE } from './entities/enums/deed_type.enum';
+import { FindOneOrCreateDeedTypeDto } from './dto/findOneOrCreate-deed-type.dto';
 
 @Injectable()
 export class DeedTypeService {
@@ -46,7 +46,7 @@ export class DeedTypeService {
         });
 
         if (!result)
-          throw new Error(
+          throw new BadRequestException(
             `Political body with id '${politicalBodyId}' could not be found`,
           );
 
@@ -54,12 +54,7 @@ export class DeedTypeService {
       },
     );
 
-    let politicalBodies: PoliticalBody[];
-    try {
-      politicalBodies = await Promise.all(politicalBodiesPromises);
-    } catch (error) {
-      if (error instanceof Error) throw new BadRequestException(error.message);
-    }
+    const politicalBodies = await Promise.all(politicalBodiesPromises);
 
     const deeType = await repository.save({
       name,
@@ -67,6 +62,24 @@ export class DeedTypeService {
     });
 
     return deeType;
+  }
+
+  // SRP - Single Responsability Principle
+  async findOneOrCreate(
+    { name, politicalBodiesId }: FindOneOrCreateDeedTypeDto,
+    queryRunner?: QueryRunner,
+  ) {
+    const deedType = await this.findOne({ name });
+
+    if (deedType) return deedType;
+
+    if (name && politicalBodiesId.length >= 1) {
+      return await this.create({ name, politicalBodiesId }, queryRunner);
+    }
+
+    throw new BadRequestException(
+      'Deed type must belong at least one Political Body',
+    );
   }
 
   async findAll() {

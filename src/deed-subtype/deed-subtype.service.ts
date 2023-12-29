@@ -10,6 +10,7 @@ import { DeedSubtype } from './entities/deed-subtype.entity';
 import { QueryRunner, Repository } from 'typeorm';
 import { PoliticalBodyService } from 'src/political-body/political-body.service';
 import { DeedTypeService } from 'src/deed-type/deed-type.service';
+import { FindOneOrCreateDeedSubtypeDto } from './dto/findOneOrCreate-deed-subtype.dto';
 
 @Injectable()
 export class DeedSubtypeService {
@@ -51,6 +52,25 @@ export class DeedSubtypeService {
       politicalBody,
       deedType,
     });
+  }
+
+  async findOneOrCreate(
+    { name, deedTypeId, politicalBodyId }: FindOneOrCreateDeedSubtypeDto,
+    queryRunner?: QueryRunner,
+  ) {
+    const deedSubtype = await this.findOne({ name });
+
+    if (deedSubtype) return deedSubtype;
+
+    if (name && deedTypeId && politicalBodyId)
+      return await this.create(
+        { name, deedTypeId, politicalBodyId },
+        queryRunner,
+      );
+
+    throw new BadRequestException(
+      'Deed subtype must belong at least one Deed type and Political Body',
+    );
   }
 
   async findAll() {

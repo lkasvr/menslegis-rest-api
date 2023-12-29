@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Author } from './entities/author.entity';
 import { QueryRunner, Repository } from 'typeorm';
 import { PoliticalBodyService } from 'src/political-body/political-body.service';
+import { FindOneOrCreateAuthorDto } from './dto/findOneOrCreate-author.dto';
 
 @Injectable()
 export class AuthorService {
@@ -39,15 +40,20 @@ export class AuthorService {
     return await this.authorRepository.save({ name, politicalBody });
   }
 
-  async findOrCreate(
-    { name, politicalBodyId }: UpdateAuthorDto,
+  async findOneOrCreate(
+    { id, name, politicalBodyId }: FindOneOrCreateAuthorDto,
     queryRunner?: QueryRunner,
   ) {
+    if (!id && !name)
+      throw new BadRequestException(
+        "At least one identifier must be informed 'id' or 'name' for Author Entity",
+      );
+
     const repository = queryRunner
       ? queryRunner.manager.getRepository(Author)
       : this.authorRepository;
 
-    const author = await this.findOne({ name });
+    const author = await this.findOne({ id, name });
 
     if (author) return author;
 

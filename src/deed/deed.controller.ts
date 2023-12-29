@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   HttpCode,
+  Put,
 } from '@nestjs/common';
 import { DeedService } from './deed.service';
 import { CreateDeedDto } from './dto/create-deed.dto';
 import { UpdateDeedDto } from './dto/update-deed.dto';
 import { ApiResponse } from '@nestjs/swagger';
+import { DeedPayloadDto } from './dto/create-deed-payload.dto';
 
 @Controller('deed')
 export class DeedController {
@@ -32,9 +34,14 @@ export class DeedController {
     return await this.deedService.findOneById(id);
   }
 
+  @Put()
+  async receiveDeedPayload(@Body() deedPayloadDto: DeedPayloadDto) {
+    return await this.deedService.receiveDeedPayload(deedPayloadDto);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDeedDto: UpdateDeedDto) {
-    return this.deedService.update(id, updateDeedDto);
+  async update(@Param('id') id: string, @Body() updateDeedDto: UpdateDeedDto) {
+    return await this.deedService.update(id, updateDeedDto);
   }
 
   @ApiResponse({

@@ -65,6 +65,11 @@ export class PoliticalBodyService {
 
     const politicalBody = await this.politicalBodyRepository.findOne({
       where: { id, name, federatedEntity: { id: federatedEntityId } },
+      relations: {
+        deedTypes: {
+          deedSubtypes: true,
+        },
+      },
       cache: true,
       withDeleted,
     });
