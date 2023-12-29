@@ -1,4 +1,12 @@
-import { IsString, IsUUID, IsUrl } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  ArrayNotEmpty,
+  IsArray,
+  IsString,
+  IsUUID,
+  IsUrl,
+} from 'class-validator';
 
 export class CreateDeedDto {
   @IsString()
@@ -19,6 +27,10 @@ export class CreateDeedDto {
   @IsUUID()
   politicalBodyId: string;
 
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(10)
   @IsUUID('all', { each: true })
   authorsIds: string[];
 

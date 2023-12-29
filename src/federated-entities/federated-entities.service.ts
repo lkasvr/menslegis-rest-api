@@ -65,17 +65,18 @@ export class FederatedEntitiesService {
     });
   }
 
-  async findOne(id: string, withDeleted = false) {
-    const federatedEntity = await this.federatedEntityRepository.findOne({
-      where: { id },
+  async findOne(
+    { id, name }: { id?: string; name?: FEDERATIVE_UNIT },
+    withDeleted = false,
+  ) {
+    if (!id && !name)
+      throw new InternalServerErrorException('All arguments empty');
+
+    return await this.federatedEntityRepository.findOne({
+      where: { id, name },
       cache: 1000,
       withDeleted,
     });
-
-    if (!federatedEntity)
-      throw new NotFoundException('Federated Entity not found');
-
-    return federatedEntity;
   }
 
   async findOneById(id: string) {
@@ -115,25 +116,39 @@ export class FederatedEntitiesService {
   }
 
   async delete(id: string) {
-    await this.findOne(id);
-    return await this.federatedEntityRepository.softDelete(id);
+    if (await this.federatedEntityExist(id, true))
+      return await this.federatedEntityRepository.softDelete(id);
+    throw new NotFoundException('Federated Entity not found');
   }
 
   async deletePermanently(id: string) {
-    await this.findOne(id, true);
-    return await this.federatedEntityRepository.delete(id);
+    if (await this.federatedEntityExist(id, true))
+      return await this.federatedEntityRepository.delete(id);
+    throw new NotFoundException('Federated Entity not found');
   }
 
   async restore(id: string) {
-    await this.findOne(id, true);
-    return await this.federatedEntityRepository.recover({ id });
+    if (await this.federatedEntityExist(id, true))
+      return await this.federatedEntityRepository.recover({ id });
+    throw new NotFoundException('Federated Entity not found');
+  }
+
+  async federatedEntityExist(id: string, withDeleted = false) {
+    return await this.federatedEntityRepository.exist({
+      where: { id },
+      withDeleted,
+    });
   }
 
   async validateFederativeHierarchy({ id, name, level }: IFederatedEntity) {
     if (name && level && !this.isValidFederativeHierarchy(name, level))
       throw new BadRequestException(`${name} cannot be a ${level} member`);
 
-    if (!this.federatedEntity) this.federatedEntity = await this.findOne(id);
+    if (!this.federatedEntity)
+      this.federatedEntity = await this.findOne({ id });
+
+    if (!this.federatedEntity)
+      throw new NotFoundException('Federated Entity not found');
 
     if (
       name &&
@@ -169,7 +184,11 @@ export class FederatedEntitiesService {
       );
     }
 
-    if (!this.federatedEntity) this.federatedEntity = await this.findOne(id);
+    if (!this.federatedEntity)
+      this.federatedEntity = await this.findOne({ id });
+
+    if (!this.federatedEntity)
+      throw new NotFoundException('Federated Entity not found');
 
     if (
       political_power &&

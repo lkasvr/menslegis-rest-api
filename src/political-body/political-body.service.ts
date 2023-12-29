@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePoliticalBodyDto } from './dto/create-political-body.dto';
@@ -19,19 +20,17 @@ export class PoliticalBodyService {
   ) {}
 
   async create({ name, federatedEntityId }: CreatePoliticalBodyDto) {
-    if (
-      await this.politicalBodyRepository.exist({
-        where: { name },
-        withDeleted: true,
-      })
-    ) {
+    if (await this.politicalBodyExist({ name }, true)) {
       throw new BadRequestException(
         `${name} Political Body already exists or once existed.`,
       );
     }
 
-    const federatedEntity =
-      await this.federatedEntityService.findOneById(federatedEntityId);
+    const federatedEntity = await this.federatedEntityService.findOne({
+      id: federatedEntityId,
+    });
+    if (!federatedEntity)
+      throw new NotFoundException('Federated Entity not found');
 
     const result = await this.politicalBodyRepository.save({
       name,
@@ -53,17 +52,24 @@ export class PoliticalBodyService {
       .getMany();
   }
 
-  async findOne(id: string, withDeleted = false) {
-    const federatedEntity = await this.politicalBodyRepository.findOne({
-      where: { id },
+  async findOne(
+    {
+      id,
+      name,
+      federatedEntityId,
+    }: { id?: string; name?: string; federatedEntityId?: string },
+    withDeleted = false,
+  ): Promise<PoliticalBody> | null {
+    if (!id && !name && !federatedEntityId)
+      throw new InternalServerErrorException('All arguments empty');
+
+    const politicalBody = await this.politicalBodyRepository.findOne({
+      where: { id, name, federatedEntity: { id: federatedEntityId } },
       cache: true,
       withDeleted,
     });
 
-    if (!federatedEntity)
-      throw new NotFoundException('Political Body not found');
-
-    return federatedEntity;
+    return politicalBody;
   }
 
   async findOneById(id: string) {
@@ -91,31 +97,55 @@ export class PoliticalBodyService {
     id: string,
     { name, federatedEntityId }: UpdatePoliticalBodyDto,
   ) {
-    const politicalBody = await this.findOneById(id);
+    const politicalBody = await this.findOne({ id });
+    if (!politicalBody) throw new NotFoundException('Political Body not found');
 
     politicalBody.name = name;
 
     if (federatedEntityId) {
-      const federatedEntity =
-        await this.federatedEntityService.findOneById(federatedEntityId);
+      const federatedEntity = await this.federatedEntityService.findOne({
+        id: federatedEntityId,
+      });
+
+      if (!federatedEntity)
+        throw new NotFoundException('Federated Entity not found');
 
       politicalBody.federatedEntity = federatedEntity;
     }
 
-    return this.politicalBodyRepository.save(politicalBody);
+    return await this.politicalBodyRepository.save(politicalBody);
   }
 
   async delete(id: string) {
-    return await this.politicalBodyRepository.softDelete(id);
+    if (await this.politicalBodyExist({ id }))
+      return await this.politicalBodyRepository.softDelete(id);
+
+    throw new NotFoundException('Political Body not found');
   }
 
   async deletePermanently(id: string) {
-    await this.findOne(id, true);
-    return await this.politicalBodyRepository.delete(id);
+    if (await this.politicalBodyExist({ id }, true))
+      return await this.politicalBodyRepository.delete(id);
+    throw new NotFoundException('Political Body not found');
   }
 
   async restore(id: string) {
-    await this.findOne(id, true);
-    return await this.politicalBodyRepository.recover({ id });
+    if (await this.politicalBodyExist({ id }, true))
+      return await this.politicalBodyRepository.recover({ id });
+    throw new NotFoundException('Political Body not found');
+  }
+
+  async politicalBodyExist(
+    {
+      id,
+      name,
+      federatedEntityId,
+    }: { id?: string; name?: string; federatedEntityId?: string },
+    withDeleted = false,
+  ) {
+    return await this.politicalBodyRepository.exist({
+      where: { id, name, federatedEntity: { id: federatedEntityId } },
+      withDeleted,
+    });
   }
 }

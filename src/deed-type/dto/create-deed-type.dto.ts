@@ -6,5 +6,5 @@ export class CreateDeedTypeDto {
   name: DEED_TYPE;
 
   @IsUUID('all', { each: true })
-  politicalBodiesId: [string, string, string];
+  politicalBodiesId: string[];
 }

@@ -1,12 +1,13 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDeedSubtypeDto } from './dto/create-deed-subtype.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DeedSubtype } from './entities/deed-subtype.entity';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { PoliticalBodyService } from 'src/political-body/political-body.service';
 import { DeedTypeService } from 'src/deed-type/deed-type.service';
 
@@ -19,21 +20,33 @@ export class DeedSubtypeService {
     private readonly deedTypeService: DeedTypeService,
   ) {}
 
-  async create({ name, deedTypeId, politicalBodyId }: CreateDeedSubtypeDto) {
+  async create(
+    { name, deedTypeId, politicalBodyId }: CreateDeedSubtypeDto,
+    queryRunner?: QueryRunner,
+  ) {
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(DeedSubtype)
+      : this.deedSubtypeRepository;
+
     if (
-      await this.deedSubtypeRepository.exist({
+      await repository.exist({
         where: { name },
         cache: true,
       })
     )
       throw new BadRequestException(`${name} Subtype already exists`);
 
-    const politicalBody =
-      await this.politicalBodyService.findOne(politicalBodyId);
+    const politicalBody = await this.politicalBodyService.findOne({
+      id: politicalBodyId,
+    });
 
-    const deedType = await this.deedTypeService.findOne(deedTypeId);
+    if (!politicalBody) throw new NotFoundException('Political Body not found');
 
-    return await this.deedSubtypeRepository.save({
+    const deedType = await this.deedTypeService.findOne({ id: deedTypeId });
+
+    if (!deedType) throw new NotFoundException('DeedType not found');
+
+    return await repository.save({
       name,
       politicalBody,
       deedType,
@@ -57,16 +70,18 @@ export class DeedSubtypeService {
       .getMany();
   }
 
-  async findOne(id: string, withDeleted = false) {
-    const deedSubtype = await this.deedSubtypeRepository.findOne({
-      where: { id },
+  async findOne(
+    { id, name }: { id?: string; name?: string },
+    withDeleted = false,
+  ) {
+    if (!id && !name)
+      throw new InternalServerErrorException('All arguments empty');
+
+    return await this.deedSubtypeRepository.findOne({
+      where: { id, name },
       cache: true,
       withDeleted,
     });
-
-    if (!deedSubtype) throw new NotFoundException('Subtype not found');
-
-    return deedSubtype;
   }
 
   async findOneById(id: string) {
@@ -89,13 +104,13 @@ export class DeedSubtypeService {
 
   async delete(id: string) {
     if (
-      !(await this.deedSubtypeRepository.exist({
+      await this.deedSubtypeRepository.exist({
         where: { id },
         cache: true,
-      }))
+      })
     )
-      throw new NotFoundException('Subtype not found');
+      return await this.deedSubtypeRepository.delete(id);
 
-    return await this.deedSubtypeRepository.delete(id);
+    throw new NotFoundException('Subtype not found');
   }
 }

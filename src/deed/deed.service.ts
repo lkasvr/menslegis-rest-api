@@ -14,6 +14,7 @@ import { DeedTypeService } from 'src/deed-type/deed-type.service';
 import { DeedSubtypeService } from 'src/deed-subtype/deed-subtype.service';
 import { Author } from 'src/author/entities/author.entity';
 import { PoliticalBody } from 'src/political-body/entities/political-body.entity';
+import { DeedPayloadDto } from './dto/create-deed-payload.dto';
 
 @Injectable()
 export class DeedService {
@@ -53,7 +54,7 @@ export class DeedService {
     this.deedBelongRules(name, politicalBody, deedTypeId, deedSubtypeId);
 
     const authorsPromises = authorsIds.map((authorId) =>
-      this.authorService.findOne(authorId).catch(() => {
+      this.authorService.findOne({ id: authorId }).catch(() => {
         throw new Error(`Author with id '${authorId}' could not be found`);
       }),
     );
@@ -65,9 +66,10 @@ export class DeedService {
       if (error instanceof Error) throw new BadRequestException(error.message);
     }
 
-    const deedType = await this.deedTypeService.findOne(deedTypeId);
+    const deedType = await this.deedTypeService.findOneById(deedTypeId);
 
-    const deedSubtype = await this.deedSubtypeService.findOne(deedSubtypeId);
+    const deedSubtype =
+      await this.deedSubtypeService.findOneById(deedSubtypeId);
 
     return await this.deedRepository.save({
       name,
@@ -82,15 +84,11 @@ export class DeedService {
     return await this.deedRepository.find();
   }
 
-  async findOne(id: string) {
-    const deed = await this.deedRepository.findOne({
+  async findOne({ id }: { id: string }) {
+    return await this.deedRepository.findOne({
       where: { id },
       cache: true,
     });
-
-    if (!deed) throw new NotFoundException('Deed not found');
-
-    return deed;
   }
 
   async findOneById(id: string) {
@@ -129,7 +127,9 @@ export class DeedService {
   ) {
     if (authorsIds) this.maxAssociationsRatioRule(authorsIds);
 
-    const deed = await this.findOne(id);
+    const deed = await this.findOne({ id });
+
+    if (!deed) throw new NotFoundException('Deed not found');
 
     const deedToCompare = new Deed();
     deedToCompare.id = deed.id;
@@ -146,8 +146,9 @@ export class DeedService {
     if (docDate) deed.docDate = new Date(docDate);
 
     if (deedTypeId && deedSubtypeId) {
-      const deedType = await this.deedTypeService.findOne(deedTypeId);
-      const deedSubtype = await this.deedSubtypeService.findOne(deedSubtypeId);
+      const deedType = await this.deedTypeService.findOneById(deedTypeId);
+      const deedSubtype =
+        await this.deedSubtypeService.findOneById(deedSubtypeId);
 
       this.deedBelongRules(
         deed.name,
@@ -159,7 +160,8 @@ export class DeedService {
       deed.deedType = deedType;
       deed.deedSubtype = deedSubtype;
     } else if (!deedTypeId && deedSubtypeId) {
-      const deedSubtype = await this.deedSubtypeService.findOne(deedSubtypeId);
+      const deedSubtype =
+        await this.deedSubtypeService.findOneById(deedSubtypeId);
 
       this.deedBelongRules(
         deed.name,
@@ -170,7 +172,7 @@ export class DeedService {
 
       deed.deedSubtype = deedSubtype;
     } else if (deedTypeId && !deedSubtypeId) {
-      const deedType = await this.deedTypeService.findOne(deedTypeId);
+      const deedType = await this.deedTypeService.findOneById(deedTypeId);
 
       this.deedBelongRules(
         deed.name,
@@ -186,7 +188,7 @@ export class DeedService {
     if (authorsIds?.length > 0 && isToAddAuthors) {
       // Add Authors Flow
       const authorsPromises = authorsIds.map((authorId) =>
-        this.authorService.findOne(authorId).catch(() => {
+        this.authorService.findOne({ id: authorId }).catch(() => {
           throw new Error(`Author with id '${authorId}' could not be found`);
         }),
       );
@@ -203,7 +205,7 @@ export class DeedService {
     } else if (authorsIds?.length > 0 && !isToAddAuthors) {
       // Remove Authors Flow
       const authorsPromises = authorsIds.map((authorId) =>
-        this.authorService.findOne(authorId).catch(() => {
+        this.authorService.findOneById(authorId).catch(() => {
           throw new Error(`Author with id '${authorId}' could not be found`);
         }),
       );
@@ -229,6 +231,107 @@ export class DeedService {
     if (!(await this.deedRepository.exist()))
       throw new NotFoundException('Deed not found');
     return await this.deedRepository.delete(id);
+  }
+
+  async receiveDeedPayload({
+    name,
+    description,
+    status,
+    docLink,
+    docDate,
+    politicalBodyName,
+    deedTypeName,
+    deedSubtypeName,
+    authorsName,
+  }: DeedPayloadDto) {
+    if (
+      await this.deedRepository.exist({
+        where: {
+          name,
+          deedType: { name: deedTypeName },
+          deedSubtype: { name: deedSubtypeName },
+        },
+      })
+    )
+      throw new BadRequestException(`${name} Deed already exists.`);
+
+    const politicalBodyEntity = await this.politicalBodyService.findOne({
+      name: politicalBodyName,
+    });
+
+    if (!politicalBodyEntity)
+      throw new BadRequestException(
+        `Political Body with name '${politicalBodyName}' could not be found`,
+      );
+
+    const queryRunner =
+      this.deedRepository.manager.connection.createQueryRunner();
+
+    await queryRunner.startTransaction();
+
+    try {
+      const deedTypeEntity =
+        (await this.deedTypeService.findOne({ name: deedTypeName })) ??
+        (await this.deedTypeService.create(
+          {
+            name: deedTypeName,
+            politicalBodiesId: [politicalBodyEntity.id],
+          },
+          queryRunner,
+        ));
+
+      const deedSubtypeEntity =
+        (await this.deedSubtypeService.findOne({ name: deedSubtypeName })) ??
+        (await this.deedSubtypeService.create(
+          {
+            deedTypeId: deedTypeEntity.id,
+            name: deedSubtypeName,
+            politicalBodyId: politicalBodyEntity.id,
+          },
+          queryRunner,
+        ));
+
+      this.deedBelongRules(
+        name,
+        politicalBodyEntity,
+        deedTypeEntity.id,
+        deedSubtypeEntity.id,
+      );
+
+      const authorsPromises = authorsName.map(
+        async (authorName) =>
+          await this.authorService
+            .findOrCreate(
+              {
+                name: authorName,
+                politicalBodyId: politicalBodyEntity.id,
+              },
+              queryRunner,
+            )
+            .catch((e) => {
+              throw new Error(
+                `${authorName} author could not be found or created \n\n ${e}`,
+              );
+            }),
+      );
+
+      const authorsEntities = await Promise.all(authorsPromises);
+
+      return await this.deedRepository.save({
+        name,
+        description,
+        status,
+        docLink,
+        docDate: new Date(docDate),
+        politicalBody: politicalBodyEntity,
+        authors: authorsEntities,
+        deedType: deedTypeEntity,
+        deedSubtype: deedSubtypeEntity,
+      });
+    } catch (error) {
+      await queryRunner.release();
+      if (error instanceof Error) throw new BadRequestException(error.message);
+    }
   }
 
   private maxAssociationsRatioRule(authorsIds: string[]) {

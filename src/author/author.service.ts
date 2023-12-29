@@ -1,16 +1,15 @@
 import {
   BadRequestException,
-  HttpCode,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateAuthorDto } from './dto/create-author.dto';
 import { UpdateAuthorDto } from './dto/update-author.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Author } from './entities/author.entity';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { PoliticalBodyService } from 'src/political-body/political-body.service';
-import { ApiResponse } from '@nestjs/swagger';
 
 @Injectable()
 export class AuthorService {
@@ -31,10 +30,34 @@ export class AuthorService {
         `Author ${name} already exists or once existed.`,
       );
 
-    const politicalBody =
-      await this.politicalBodyService.findOne(politicalBodyId);
+    const politicalBody = await this.politicalBodyService.findOne({
+      id: politicalBodyId,
+    });
+
+    if (!politicalBody) throw new NotFoundException('Political Body not found');
 
     return await this.authorRepository.save({ name, politicalBody });
+  }
+
+  async findOrCreate(
+    { name, politicalBodyId }: UpdateAuthorDto,
+    queryRunner?: QueryRunner,
+  ) {
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(Author)
+      : this.authorRepository;
+
+    const author = await this.findOne({ name });
+
+    if (author) return author;
+
+    const politicalBody = await this.politicalBodyService.findOne({
+      id: politicalBodyId,
+    });
+
+    if (!politicalBody) throw new NotFoundException('Political Body not found');
+
+    return await repository.save({ name, politicalBody });
   }
 
   async findAll() {
@@ -66,21 +89,26 @@ export class AuthorService {
     return author;
   }
 
-  async findOne(id: string, withDeleted = false) {
-    const author = await this.authorRepository.findOne({
-      where: { id },
+  async findOne(
+    { id, name }: { id?: string; name?: string },
+    withDeleted = false,
+  ) {
+    if (!id && !name)
+      throw new InternalServerErrorException('All arguments empty');
+
+    return await this.authorRepository.findOne({
+      where: { id, name },
       cache: true,
       withDeleted,
     });
-
-    if (!author) throw new NotFoundException('Author not found');
-
-    return author;
   }
 
   async update(id: string, { name, politicalBodyId }: UpdateAuthorDto) {
-    const politicalBody =
-      await this.politicalBodyService.findOne(politicalBodyId);
+    const politicalBody = await this.politicalBodyService.findOne({
+      id: politicalBodyId,
+    });
+
+    if (!politicalBody) throw new NotFoundException('Political Body not found');
 
     if (
       !(await this.authorRepository.exist({
@@ -96,18 +124,14 @@ export class AuthorService {
     });
   }
 
-  @ApiResponse({
-    status: 204,
-  })
-  @HttpCode(204)
   async delete(id: string) {
     if (
-      !(await this.authorRepository.exist({
+      await this.authorRepository.exist({
         where: { id },
-      }))
+      })
     )
-      throw new NotFoundException('Author not found');
+      return await this.authorRepository.delete(id);
 
-    return await this.authorRepository.delete(id);
+    throw new NotFoundException('Author not found');
   }
 }

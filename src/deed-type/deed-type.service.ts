@@ -1,14 +1,16 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDeedTypeDto } from './dto/create-deed-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { DeedType } from './entities/deed-type.entity';
 import { PoliticalBodyService } from 'src/political-body/political-body.service';
 import { PoliticalBody } from 'src/political-body/entities/political-body.entity';
+import { DEED_TYPE } from './entities/enums/deed_type.enum';
 
 @Injectable()
 export class DeedTypeService {
@@ -18,29 +20,38 @@ export class DeedTypeService {
     private readonly politicalBodyService: PoliticalBodyService,
   ) {}
 
-  async create({ name, politicalBodiesId }: CreateDeedTypeDto) {
+  async create(
+    { name, politicalBodiesId }: CreateDeedTypeDto,
+    queryRunner?: QueryRunner,
+  ) {
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(DeedType)
+      : this.deedTypeRepository;
+
     if (politicalBodiesId.length > 3)
       throw new BadRequestException(
         'Max ratio in a create operation exceeded. Only three associations per creation are allowed',
       );
 
-    if (
-      await this.deedTypeRepository.exist({
-        where: { name },
-        withDeleted: true,
-      })
-    ) {
+    if (await this.deedTypeExist({ name }, true)) {
       throw new BadRequestException(
         `${name} Type already exists or once existed.`,
       );
     }
 
-    const politicalBodiesPromises = politicalBodiesId.map((politicalBodyId) =>
-      this.politicalBodyService.findOneById(politicalBodyId).catch(() => {
-        throw new Error(
-          `Political body with id '${politicalBodyId}' could not be found`,
-        );
-      }),
+    const politicalBodiesPromises = politicalBodiesId.map(
+      async (politicalBodyId) => {
+        const result = await this.politicalBodyService.findOne({
+          id: politicalBodyId,
+        });
+
+        if (!result)
+          throw new Error(
+            `Political body with id '${politicalBodyId}' could not be found`,
+          );
+
+        return result;
+      },
     );
 
     let politicalBodies: PoliticalBody[];
@@ -50,7 +61,7 @@ export class DeedTypeService {
       if (error instanceof Error) throw new BadRequestException(error.message);
     }
 
-    const deeType = await this.deedTypeRepository.save({
+    const deeType = await repository.save({
       name,
       politicalBodies,
     });
@@ -62,14 +73,18 @@ export class DeedTypeService {
     return await this.deedTypeRepository.find();
   }
 
-  async findOne(id: string, withDeleted = false) {
+  async findOne(
+    { id, name }: { id?: string; name?: DEED_TYPE },
+    withDeleted = false,
+  ): Promise<DeedType> | null {
+    if (!id && !name)
+      throw new InternalServerErrorException('All arguments empty');
+
     const deedType = await this.deedTypeRepository.findOne({
-      where: { id },
+      where: { id, name },
       cache: true,
       withDeleted,
     });
-
-    if (!deedType) throw new NotFoundException('Type not found');
 
     return deedType;
   }
@@ -91,16 +106,30 @@ export class DeedTypeService {
   }
 
   async delete(id: string) {
-    return await this.deedTypeRepository.softDelete(id);
+    if (await this.deedTypeExist({ id }))
+      return await this.deedTypeRepository.softDelete(id);
+    throw new NotFoundException('Type not found');
   }
 
   async deletePermanently(id: string) {
-    await this.findOne(id, true);
-    return await this.deedTypeRepository.delete(id);
+    if (await this.deedTypeExist({ id }, true))
+      return await this.deedTypeRepository.delete(id);
+    throw new NotFoundException('Type not found');
   }
 
   async restore(id: string) {
-    await this.findOne(id, true);
-    return await this.deedTypeRepository.recover({ id });
+    if (await this.deedTypeExist({ id }, true))
+      return await this.deedTypeRepository.recover({ id });
+    throw new NotFoundException('Type not found');
+  }
+
+  async deedTypeExist(
+    { id, name }: { id?: string; name?: DEED_TYPE },
+    withDeleted = false,
+  ) {
+    return await this.deedTypeRepository.exist({
+      where: { id, name },
+      withDeleted,
+    });
   }
 }
