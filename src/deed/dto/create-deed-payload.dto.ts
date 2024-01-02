@@ -30,10 +30,8 @@ export class DeedPayloadDto {
   docLink?: string;
 
   @IsString()
-  @IsOptional()
-  docDate?: string;
+  docDate: string;
 
-  @IsString()
   @IsUUID()
   @IsOptional()
   politicalBodyId?: string;
