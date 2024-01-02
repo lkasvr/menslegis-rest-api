@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -9,6 +10,8 @@ import {
   IsString,
   IsUUID,
   IsUrl,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { DEED_SUBTYPE } from 'src/deed-subtype/entities/enums/deed_subtype.enum';
 import { DEED_TYPE } from 'src/deed-type/entities/enums/deed_type.enum';
@@ -33,6 +36,7 @@ export class DeedPayloadDto {
   docDate: string;
 
   @IsUUID()
+  @IsNotEmpty()
   @IsOptional()
   politicalBodyId?: string;
 
@@ -52,13 +56,19 @@ export class DeedPayloadDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(10)
   @IsNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => Authors)
   authors: Authors[];
 }
 
 class Authors {
   @IsUUID()
+  @IsNotEmpty()
+  @ValidateIf((obj, value) => value !== undefined)
   id: string;
 
   @IsString()
+  @IsNotEmpty()
+  @ValidateIf((obj, value) => value !== undefined)
   name: string;
 }

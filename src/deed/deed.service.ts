@@ -320,6 +320,8 @@ export class DeedService {
 
       const authorsEntities = await Promise.all(authorsPromises);
 
+      delete politicalBodyEntity.deedTypes;
+
       return await this.deedRepository.save({
         name,
         description,
