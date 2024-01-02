@@ -15,6 +15,7 @@ import { DeedSubtypeService } from 'src/deed-subtype/deed-subtype.service';
 import { Author } from 'src/author/entities/author.entity';
 import { PoliticalBody } from 'src/political-body/entities/political-body.entity';
 import { DeedPayloadDto } from './dto/create-deed-payload.dto';
+import { isValid, parse as parseDate, parseISO } from 'date-fns';
 
 @Injectable()
 export class DeedService {
@@ -253,6 +254,12 @@ export class DeedService {
         "At least one identifier must be informed 'politicalBodyId' or 'politicalBodyName'",
       );
 
+    const parsedDocDate = parseDate(docDate, 'yyyy-MM-dd', new Date());
+    if (!isValid(parsedDocDate))
+      throw new BadRequestException(
+        "The docDate must be in the following format 'yyyy-MM-dd'",
+      );
+
     if (
       await this.deedRepository.exist({
         where: {
@@ -318,7 +325,7 @@ export class DeedService {
         description,
         status,
         docLink,
-        docDate: new Date(docDate),
+        docDate: new Date(parseISO(docDate)),
         politicalBody: politicalBodyEntity,
         authors: authorsEntities,
         deedType: deedTypeEntity,
