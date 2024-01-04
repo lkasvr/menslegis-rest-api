@@ -18,6 +18,9 @@ export class Author {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  code: string;
+
   @Column({ type: 'varchar', length: 55 })
   name: string;
 
@@ -29,8 +32,8 @@ export class Author {
   politicalBody: PoliticalBody;
 
   @ManyToMany(() => Deed, (deeds) => deeds.authors, {
-    nullable: true,
     onDelete: 'RESTRICT',
+    nullable: true,
   })
   deeds: Deed[];
 

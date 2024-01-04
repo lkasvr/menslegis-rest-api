@@ -20,10 +20,10 @@ export class AuthorService {
     private readonly politicalBodyService: PoliticalBodyService,
   ) {}
 
-  async create({ name, politicalBodyId }: CreateAuthorDto) {
+  async create({ code, name, politicalBodyId }: CreateAuthorDto) {
     if (
       await this.authorRepository.exist({
-        where: { name },
+        where: { name, code },
         withDeleted: true,
       })
     )
@@ -37,11 +37,11 @@ export class AuthorService {
 
     if (!politicalBody) throw new NotFoundException('Political Body not found');
 
-    return await this.authorRepository.save({ name, politicalBody });
+    return await this.authorRepository.save({ code, name, politicalBody });
   }
 
   async findOneOrCreate(
-    { id, name, politicalBodyId }: FindOneOrCreateAuthorDto,
+    { id, name, politicalBody }: FindOneOrCreateAuthorDto,
     queryRunner?: QueryRunner,
   ) {
     if (!id && !name)
@@ -53,15 +53,16 @@ export class AuthorService {
       ? queryRunner.manager.getRepository(Author)
       : this.authorRepository;
 
-    const author = await this.findOne({ id, name });
+    const author = await this.findOne({ id, name }, false, queryRunner);
+
+    console.log('(AUTHOR SERVICE) AUTHOR', author);
 
     if (author) return author;
 
-    const politicalBody = await this.politicalBodyService.findOne({
-      id: politicalBodyId,
-    });
-
     if (!politicalBody) throw new NotFoundException('Political Body not found');
+
+    console.log('(AUTHOR SERVICE) POLITICAL BODY', politicalBody);
+    console.log('(AUTHOR SERVICE) AUTOR.NAME', name);
 
     return await repository.save({ name, politicalBody });
   }
@@ -98,13 +99,17 @@ export class AuthorService {
   async findOne(
     { id, name }: { id?: string; name?: string },
     withDeleted = false,
+    queryRunner?: QueryRunner,
   ) {
     if (!id && !name)
       throw new InternalServerErrorException('All arguments empty');
 
-    return await this.authorRepository.findOne({
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(Author)
+      : this.authorRepository;
+
+    return await repository.findOne({
       where: { id, name },
-      cache: true,
       withDeleted,
     });
   }

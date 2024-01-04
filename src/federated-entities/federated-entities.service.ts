@@ -49,7 +49,7 @@ export class FederatedEntitiesService {
         `${political_power} power on ${name} ${level} already exist or there once was`,
       );
 
-    return this.federatedEntityRepository.save({
+    return await this.federatedEntityRepository.save({
       level,
       political_power,
       name,
@@ -74,7 +74,6 @@ export class FederatedEntitiesService {
 
     return await this.federatedEntityRepository.findOne({
       where: { id, name },
-      cache: 1000,
       withDeleted,
     });
   }

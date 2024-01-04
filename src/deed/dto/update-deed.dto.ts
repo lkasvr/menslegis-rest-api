@@ -13,6 +13,9 @@ export class UpdateDeedDto {
   status?: string;
 
   @IsUrl()
+  pageDocLink?: string;
+
+  @IsUrl()
   docLink?: string;
 
   @IsString()

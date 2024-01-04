@@ -21,9 +21,7 @@ import { DeedSubtypeModule } from './deed-subtype/deed-subtype.module';
       synchronize: Boolean(process.env.DATABASE_SYNCHRONIZE),
       logging: true,
       autoLoadEntities: true,
-      cache: {
-        duration: 0, //5000,
-      },
+      cache: false,
     }),
     FederatedEntitiesModule,
     PoliticalBodyModule,

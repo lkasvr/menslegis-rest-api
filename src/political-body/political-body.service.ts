@@ -8,7 +8,7 @@ import { CreatePoliticalBodyDto } from './dto/create-political-body.dto';
 import { UpdatePoliticalBodyDto } from './dto/update-political-body.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PoliticalBody } from './entities/political-body.entity';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { FederatedEntitiesService } from 'src/federated-entities/federated-entities.service';
 
 @Injectable()
@@ -59,19 +59,24 @@ export class PoliticalBodyService {
       federatedEntityId,
     }: { id?: string; name?: string; federatedEntityId?: string },
     withDeleted = false,
+    queryRunner?: QueryRunner,
   ): Promise<PoliticalBody> | null {
     if (!id && !name && !federatedEntityId)
       throw new InternalServerErrorException('All arguments empty');
 
-    const politicalBody = await this.politicalBodyRepository.findOne({
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(PoliticalBody)
+      : this.politicalBodyRepository;
+
+    const politicalBody = await repository.findOne({
       where: { id, name, federatedEntity: { id: federatedEntityId } },
       relations: {
         deedTypes: {
           deedSubtypes: true,
         },
       },
-      cache: true,
       withDeleted,
+      cache: true,
     });
 
     return politicalBody;

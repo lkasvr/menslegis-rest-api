@@ -20,14 +20,7 @@ export class DeedTypeService {
     private readonly politicalBodyService: PoliticalBodyService,
   ) {}
 
-  async create(
-    { name, politicalBodiesId }: CreateDeedTypeDto,
-    queryRunner?: QueryRunner,
-  ) {
-    const repository = queryRunner
-      ? queryRunner.manager.getRepository(DeedType)
-      : this.deedTypeRepository;
-
+  async create({ name, politicalBodiesId }: CreateDeedTypeDto) {
     if (politicalBodiesId.length > 3)
       throw new BadRequestException(
         'Max ratio in a create operation exceeded. Only three associations per creation are allowed',
@@ -56,7 +49,7 @@ export class DeedTypeService {
 
     const politicalBodies = await Promise.all(politicalBodiesPromises);
 
-    const deeType = await repository.save({
+    const deeType = await this.deedTypeRepository.save({
       name,
       politicalBodies,
     });
@@ -64,22 +57,41 @@ export class DeedTypeService {
     return deeType;
   }
 
-  // SRP - Single Responsability Principle
+  // SRP - Single Responsability Principle (Needed)
   async findOneOrCreate(
-    { name, politicalBodiesId }: FindOneOrCreateDeedTypeDto,
+    { name, politicalBodies }: FindOneOrCreateDeedTypeDto,
     queryRunner?: QueryRunner,
   ) {
-    const deedType = await this.findOne({ name });
+    console.log(
+      'INSIDE FIND ONE OR CREATE (DeedTypeService)____________________________________________________________________________',
+    );
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(DeedType)
+      : this.deedTypeRepository;
+
+    const deedType = await this.findOne({ name }, false, queryRunner);
+
+    console.log(
+      'INSIDE FIND ONE OR CREATE (FIND ONE FIRST STAGE) ____________________________________________________________________________',
+    );
 
     if (deedType) return deedType;
 
-    if (name && politicalBodiesId.length >= 1) {
-      return await this.create({ name, politicalBodiesId }, queryRunner);
-    }
-
-    throw new BadRequestException(
-      'Deed type must belong at least one Political Body',
+    console.log(
+      'INSIDE FIND ONE OR CREATE (START VALIDATION STAGE) ____________________________________________________________________________',
     );
+
+    if (politicalBodies.length < 1)
+      throw new BadRequestException(
+        'Deed type must belong at least one Political Body',
+      );
+
+    if (politicalBodies.length > 3)
+      throw new BadRequestException(
+        'Max ratio in a create operation exceeded. Only three associations per creation are allowed',
+      );
+
+    return await repository.save({ name, politicalBodies });
   }
 
   async findAll() {
@@ -89,17 +101,19 @@ export class DeedTypeService {
   async findOne(
     { id, name }: { id?: string; name?: DEED_TYPE },
     withDeleted = false,
+    queryRunner?: QueryRunner,
   ): Promise<DeedType> | null {
     if (!id && !name)
       throw new InternalServerErrorException('All arguments empty');
 
-    const deedType = await this.deedTypeRepository.findOne({
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(DeedType)
+      : this.deedTypeRepository;
+
+    return await repository.findOne({
       where: { id, name },
-      cache: true,
       withDeleted,
     });
-
-    return deedType;
   }
 
   async findOneById(id: string) {

@@ -21,14 +21,17 @@ export class Deed {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 105 })
+  @Column({ type: 'varchar' })
   name: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   status: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  pageDocLink: string;
 
   @Column({ type: 'varchar', nullable: true })
   docLink: string;
@@ -39,13 +42,20 @@ export class Deed {
   @ManyToOne(() => PoliticalBody, (politicalBody) => politicalBody.deeds)
   politicalBody: PoliticalBody;
 
-  @ManyToOne(() => DeedType, (deedType) => deedType.deeds)
+  @ManyToOne(() => DeedType, (deedType) => deedType.deeds, {
+    nullable: true,
+  })
   deedType: DeedType;
 
-  @ManyToOne(() => DeedSubtype, (deedSubtype) => deedSubtype.deeds)
+  @ManyToOne(() => DeedSubtype, (deedSubtype) => deedSubtype.deeds, {
+    nullable: true,
+  })
   deedSubtype: DeedSubtype;
 
-  @ManyToMany(() => Author, (authors) => authors.deeds, { onDelete: 'CASCADE' })
+  @ManyToMany(() => Author, (authors) => authors.deeds, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   @JoinTable({ name: 'author_deed' })
   authors: Author[];
 

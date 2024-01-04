@@ -30,6 +30,10 @@ export class DeedPayloadDto {
 
   @IsUrl()
   @IsOptional()
+  pageDocLink?: string;
+
+  @IsUrl()
+  @IsOptional()
   docLink?: string;
 
   @IsString()

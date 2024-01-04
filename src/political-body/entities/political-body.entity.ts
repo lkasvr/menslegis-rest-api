@@ -35,7 +35,6 @@ export class PoliticalBody {
   federatedEntity: FederatedEntity;
 
   @ManyToMany(() => DeedType, (deedType) => deedType.politicalBodies, {
-    nullable: true,
     onDelete: 'CASCADE',
   })
   @JoinTable({ name: 'political_body_deed_type' })

@@ -21,16 +21,9 @@ export class DeedSubtypeService {
     private readonly deedTypeService: DeedTypeService,
   ) {}
 
-  async create(
-    { name, deedTypeId, politicalBodyId }: CreateDeedSubtypeDto,
-    queryRunner?: QueryRunner,
-  ) {
-    const repository = queryRunner
-      ? queryRunner.manager.getRepository(DeedSubtype)
-      : this.deedSubtypeRepository;
-
+  async create({ name, deedTypeId, politicalBodyId }: CreateDeedSubtypeDto) {
     if (
-      await repository.exist({
+      await this.deedSubtypeRepository.exist({
         where: { name },
         cache: true,
       })
@@ -43,11 +36,14 @@ export class DeedSubtypeService {
 
     if (!politicalBody) throw new NotFoundException('Political Body not found');
 
-    const deedType = await this.deedTypeService.findOne({ id: deedTypeId });
+    const deedType = await this.deedTypeService.findOne(
+      { id: deedTypeId },
+      false,
+    );
 
-    if (!deedType) throw new NotFoundException('DeedType not found');
+    if (!deedType) throw new NotFoundException('Type not found');
 
-    return await repository.save({
+    return await this.deedSubtypeRepository.save({
       name,
       politicalBody,
       deedType,
@@ -55,21 +51,22 @@ export class DeedSubtypeService {
   }
 
   async findOneOrCreate(
-    { name, deedTypeId, politicalBodyId }: FindOneOrCreateDeedSubtypeDto,
+    { name, deedType, politicalBody }: FindOneOrCreateDeedSubtypeDto,
     queryRunner?: QueryRunner,
   ) {
-    const deedSubtype = await this.findOne({ name });
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(DeedSubtype)
+      : this.deedSubtypeRepository;
+
+    const deedSubtype = await this.findOne({ name }, false, queryRunner);
 
     if (deedSubtype) return deedSubtype;
 
-    if (name && deedTypeId && politicalBodyId)
-      return await this.create(
-        { name, deedTypeId, politicalBodyId },
-        queryRunner,
-      );
+    if (name && deedType && politicalBody)
+      return await repository.save({ name, deedType, politicalBody });
 
     throw new BadRequestException(
-      'Deed subtype must belong at least one Deed type and Political Body',
+      'Deed subtype must belong at one Deed type and Political Body',
     );
   }
 
@@ -93,13 +90,17 @@ export class DeedSubtypeService {
   async findOne(
     { id, name }: { id?: string; name?: string },
     withDeleted = false,
+    queryRunner?: QueryRunner,
   ) {
     if (!id && !name)
       throw new InternalServerErrorException('All arguments empty');
 
-    return await this.deedSubtypeRepository.findOne({
+    const repository = queryRunner
+      ? queryRunner.manager.getRepository(DeedSubtype)
+      : this.deedSubtypeRepository;
+
+    return await repository.findOne({
       where: { id, name },
-      cache: true,
       withDeleted,
     });
   }
