@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   Put,
+  Query,
 } from '@nestjs/common';
 import { DeedService } from './deed.service';
 import { CreateDeedDto } from './dto/create-deed.dto';
@@ -25,8 +26,13 @@ export class DeedController {
   }
 
   @Get()
-  async findAll() {
-    return await this.deedService.findAll();
+  async findAll(
+    @Query('year') year?: string,
+    @Query('date') date?: string,
+    @Query('initialDate') initialDate?: string,
+    @Query('finalDate') finalDate?: string,
+  ) {
+    return await this.deedService.findAll({ year, date, initialDate, finalDate });
   }
 
   @Get(':id')

@@ -6,7 +6,15 @@ import {
 import { CreateDeedDto } from './dto/create-deed.dto';
 import { UpdateDeedDto } from './dto/update-deed.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryRunner, Repository } from 'typeorm';
+import {
+  Raw,
+  QueryRunner,
+  Repository,
+  FindOptionsWhere,
+  Between,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+} from 'typeorm';
 import { Deed } from './entities/deed.entity';
 import { AuthorService } from 'src/author/author.service';
 import { PoliticalBodyService } from 'src/political-body/political-body.service';
@@ -97,8 +105,56 @@ export class DeedService {
     });
   }
 
-  async findAll() {
-    return await this.deedRepository.find();
+  async findAll({
+    year,
+    date,
+    initialDate,
+    finalDate,
+  }: {
+    year?: string;
+    date?: string;
+    initialDate?: string;
+    finalDate?: string;
+  }) {
+    const where: FindOptionsWhere<Deed> | FindOptionsWhere<Deed>[] =
+      new Object();
+
+    if (year && isNaN(parseInt(year)))
+      throw new BadRequestException('Year is not valid');
+
+    if (year)
+      where.docDate = Raw(
+        (docDate) => `EXTRACT(YEAR FROM ${docDate}) = ${year}`,
+      );
+
+    const parsedDate = date && parseDate(date, 'yyyy-MM-dd', new Date());
+    if (date && !isValid(parsedDate))
+      throw new BadRequestException('Date is not valid');
+
+    if (parseDate) where.docDate = parsedDate;
+
+    const parsedInitialDate =
+      initialDate && parseDate(initialDate, 'yyyy-MM-dd', new Date());
+    const parsedFinalDate =
+      finalDate && parseDate(finalDate, 'yyyy-MM-dd', new Date());
+    if (
+      (parsedInitialDate || parsedFinalDate) &&
+      !isValid(parsedInitialDate) &&
+      !isValid(parsedFinalDate)
+    )
+      throw new BadRequestException('Initial date or Final date is not valid');
+
+    if (parsedInitialDate && parsedFinalDate) {
+      where.docDate = Between(parsedInitialDate, parsedFinalDate);
+    } else if (parsedInitialDate && !parsedFinalDate) {
+      where.docDate = MoreThanOrEqual(parsedInitialDate);
+    } else if (!parsedInitialDate && parsedFinalDate) {
+      where.docDate = LessThanOrEqual(parsedFinalDate);
+    }
+
+    return await this.deedRepository.find({
+      where,
+    });
   }
 
   async findOne({ id }: { id: string }) {
@@ -264,18 +320,10 @@ export class DeedService {
     subtype,
     authors,
   }: DeedPayloadDto) {
-    console.log(
-      'START____________________________________________________________________________',
-    );
-
     if (!politicalBodyId && !politicalBodyName)
       throw new BadRequestException(
         "At least one identifier must be informed 'politicalBodyId' or 'politicalBodyName'",
       );
-
-    console.log(
-      'AFTER FIRST THROW BAD-REQ____________________________________________________________________________',
-    );
 
     const parsedDocDate = parseDate(docDate, 'yyyy-MM-dd', new Date());
     if (!isValid(parsedDocDate))
@@ -288,9 +336,6 @@ export class DeedService {
 
     try {
       await queryRunner.startTransaction();
-      console.log(
-        'AFTER START TRANSACTION____________________________________________________________________________',
-      );
 
       const politicalBodyEntity = await this.politicalBodyService.findOne(
         {
@@ -304,10 +349,6 @@ export class DeedService {
         throw new BadRequestException(
           `Political Body with name '${politicalBodyName}' could not be found`,
         );
-
-      console.log(
-        'AFTER FIND ONE POLITICAL BODY____________________________________________________________________________',
-      );
 
       const deedTypeEntity = await this.deedTypeService.findOneOrCreate(
         { name: type, politicalBodies: [politicalBodyEntity] },
@@ -323,10 +364,6 @@ export class DeedService {
         queryRunner,
       );
 
-      console.log(
-        'ANTES deedBelongRules____________________________________________________________________________',
-      );
-
       this.deedBelongRules(
         name,
         deedTypeEntity.id,
@@ -334,10 +371,6 @@ export class DeedService {
         politicalBodyEntity.id,
         null,
         queryRunner,
-      );
-
-      console.log(
-        'DEPOIS deedBelongRules____________________________________________________________________________',
       );
 
       const authorsPromises = authors.map((author) =>
@@ -351,17 +384,7 @@ export class DeedService {
         ),
       );
 
-      console.log(
-        'ANTES authorsPromises____________________________________________________________________________',
-      );
-
       const authorsEntities = await Promise.all(authorsPromises);
-
-      console.log('(DEED SERVICE) AUTHOR ENTITIES', authorsEntities);
-
-      console.log(
-        'ANTES authorsPromises____________________________________________________________________________',
-      );
 
       delete politicalBodyEntity.deedTypes;
 
@@ -377,10 +400,6 @@ export class DeedService {
         deedType: deedTypeEntity,
         deedSubtype: deedSubtypeEntity,
       });
-
-      console.log(
-        'COMMIT ____________________________________________________________________________',
-      );
 
       await queryRunner.commitTransaction();
 
